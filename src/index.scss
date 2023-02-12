@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    font-family: sans-serif;
+  }
+
+  label {
+    display: block;
+  }
+
+  input,
+  textarea {
+    @apply border border-gray-400 rounded h-10 bg-gray-200 p-2 w-full font-normal focus:bg-white;
+  }
+
+  textarea {
+    @apply min-h-[100px];
+  }
+
+  h1 {
+    @apply text-3xl font-bold;
+  }
+}
+
+@layer components {
+  .form {
+    @apply flex flex-col gap-4 mx-auto max-w-sm;
+  }
+
+  .btn {
+    @apply rounded-lg h-10 px-6 border bg-gray-400 font-bold uppercase tracking-wider;
+  }
+
+  .btn-positive {
+    @apply bg-positive text-positive-content;
+
+    &:hover {
+      @apply bg-positive-hover;
+    }
+  }
+
+  .input-label {
+    @apply font-bold block;
+  }
+
+  .input-helper {
+    @apply block text-sm;
+  }
+}
