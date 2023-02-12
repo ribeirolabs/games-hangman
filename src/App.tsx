@@ -7,7 +7,7 @@ import { PlayGame } from "./steps/PlayGame";
 function App() {
   const screenType = (new URLSearchParams(window.location.search).get(
     "screen_type"
-  ) ?? "host") as ScreenType;
+  ) ?? "game") as ScreenType;
 
   return (
     <GameProvider

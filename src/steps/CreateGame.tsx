@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { useGameAction, gameSchema, useGameState, Player } from "../core";
+import { useGameAction, gameSchema, useGameState } from "../core";
 import { ValidationErrors, validate } from "../utils";
 const PLAYERS: string[] = ["Igor", "Nay", "Lucia", "Livia"];
 
@@ -25,7 +25,7 @@ export function CreateGame() {
     const players = (data.get("players") as string)?.split(/\n/);
 
     const result = validate(
-      GAME || {
+      {
         id: crypto.randomUUID(),
         maxLetterGuesses,
         maxWordGuesses,
@@ -42,7 +42,7 @@ export function CreateGame() {
     send({ type: "createGame", game: result.data });
   }
 
-  if (type === "game") {
+  if (type === "presentation") {
     return <h1 className="text-center">Aguardando criação do jogo</h1>;
   }
 

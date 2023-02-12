@@ -1,4 +1,5 @@
-import immer from "immer";
+import removeAccents from "remove-accents";
+import produce, { Draft, finishDraft, current } from "immer";
 import {
   createContext,
   Dispatch,
@@ -72,11 +73,12 @@ export const selectWordSchema = z.object({
   hint: z.string().min(1, "Escolha uma dica").min(3),
 });
 
-export type ScreenType = "host" | "game";
+export type ScreenType = "game" | "presentation";
 export type Game = z.infer<typeof gameSchema> & {
   playerPoints: Record<string, number>;
 };
 export type Player = z.infer<typeof playersSchema>[number];
+export type GuessMode = "letter" | "word";
 export type State =
   | {
       step: "selectingScreenType";
@@ -98,6 +100,8 @@ export type State =
       type: ScreenType;
       game: Game;
       round: {
+        guessMode: GuessMode;
+        guessModeOptions: GuessMode[];
         word: string;
         lettersGuessed: Record<string, boolean>;
         wordsGuessed: Record<string, boolean>;
@@ -133,6 +137,13 @@ type Action =
   | {
       type: "guessLetter";
       letter: string;
+    }
+  | {
+      type: "setGuessMode";
+      mode: GuessMode;
+    }
+  | {
+      type: "nextRound";
     };
 
 function getNextPlayer({
@@ -152,9 +163,9 @@ function getNextPlayer({
         return false;
       }
 
-      // if (guesses.words > 0) {
-      //   return true;
-      // }
+      if (guesses.words > 0) {
+        return true;
+      }
 
       if (guesses.letters === 0) {
         return false;
@@ -170,7 +181,35 @@ function getNextPlayer({
     return available[(current + 1) % available.length];
   }
 
+  if (step === "selectingWord") {
+    const host = players.findIndex((p) => p.id === round.host);
+    const next = host % available.length;
+
+    return available[next];
+  }
+
   return available[0];
+}
+
+function setNextHost(draft: Draft<PlayingState>) {
+  const currentHost = draft.game.players.findIndex(
+    (player) => player.id === draft.round.host
+  );
+
+  const next =
+    draft.game.players[(currentHost + 1) % draft.game.players.length];
+
+  draft.round.host = next.id;
+}
+
+function setNextPlayer(draft: Draft<PlayingState>) {
+  const nextPlayer = getNextPlayer(draft);
+
+  if (nextPlayer == null) {
+    throw new Error("Jogo inválido, recomeçe");
+  }
+
+  draft.round.turn = nextPlayer.id;
 }
 
 function resetPoints(players: Player[]) {
@@ -194,6 +233,54 @@ function resetGuesses(game: Game) {
     }),
     {}
   );
+}
+
+type PlayingState = Extract<State, { step: "playing" }>;
+
+function setWinner(draft: Draft<PlayingState>, id: string) {
+  draft.round.winner = id;
+}
+
+function getRemainingLetters(state: PlayingState) {
+  return state.round.word
+    .split("")
+    .filter((word) => !state.round.lettersGuessed[word]).length;
+}
+
+function setAvailableModes(draft: Draft<PlayingState>) {
+  const guesses = draft.round.playerGuesses[draft.round.turn];
+
+  if (
+    guesses.letters === 0 &&
+    guesses.words > 0 &&
+    draft.game.maxWordGuesses > 0
+  ) {
+    draft.round.guessMode = "word";
+    draft.round.guessModeOptions = ["word"];
+  }
+}
+
+function checkRoundOver(draft: Draft<PlayingState>) {
+  const remainingLetters = getRemainingLetters(draft);
+  const remainingGuesses = draft.game.players.reduce((guesses, player) => {
+    if (draft.round.host === player.id) {
+      return guesses;
+    }
+
+    const playerGuesses = draft.round.playerGuesses[player.id];
+
+    return guesses + playerGuesses.words + playerGuesses.letters;
+  }, 0);
+
+  if (remainingLetters === 0 || remainingGuesses === 0) {
+    draft.round.points[draft.round.host] += draft.round.word.length;
+
+    setWinner(draft, draft.round.host);
+
+    return true;
+  }
+
+  return false;
 }
 
 export function reducer(state: State, action: Action): State {
@@ -229,6 +316,9 @@ export function reducer(state: State, action: Action): State {
       step: "playing",
       round: {
         ...state.round,
+        guessMode: "letter",
+        guessModeOptions:
+          state.game.maxWordGuesses > 0 ? ["letter", "word"] : ["letter"],
         lettersGuessed: {},
         wordsGuessed: {},
         playerGuesses: resetGuesses(state.game),
@@ -242,14 +332,7 @@ export function reducer(state: State, action: Action): State {
   }
 
   if (action.type === "guessLetter" && state.step === "playing") {
-    return immer(state, (draft) => {
-      function setWinner(id: string) {
-        draft.round.winner = id;
-        draft.round.lettersGuessed = {};
-        draft.round.wordsGuessed = {};
-        draft.round.playerGuesses = resetGuesses(draft.game);
-      }
-
+    const result = produce(state, (draft) => {
       const letter = action.letter.toUpperCase();
 
       if (state.round.lettersGuessed[letter]) {
@@ -264,19 +347,18 @@ export function reducer(state: State, action: Action): State {
 
       draft.round.lettersGuessed[letter] = true;
 
-      const remainingLetters = draft.round.word
-        .split("")
-        .filter((word) => !draft.round.lettersGuessed[word]).length;
-
+      const remainingLetters = getRemainingLetters(draft);
       const hasLetter = draft.round.word.includes(letter);
 
-      console.log(remainingLetters, state.round);
-
       if (hasLetter) {
-        draft.round.points[draft.round.turn]++;
+        const occurences = draft.round.word
+          .split("")
+          .filter((l) => l === letter).length;
+
+        draft.round.points[draft.round.turn] += occurences;
 
         if (remainingLetters === 0) {
-          setWinner(draft.round.turn);
+          setWinner(draft, draft.round.turn);
           return;
         }
 
@@ -286,22 +368,79 @@ export function reducer(state: State, action: Action): State {
       draft.round.playerGuesses[draft.round.turn].letters--;
       draft.round.points[draft.round.host]++;
 
-      const nextPlayer = getNextPlayer(state);
-
-      if (nextPlayer) {
-        draft.round.turn = nextPlayer.id;
+      if (checkRoundOver(draft)) {
         return;
       }
 
-      draft.game.playerPoints[state.round.host] +=
-        remainingLetters + draft.round.points[draft.round.host];
+      setNextPlayer(draft);
+    });
 
-      setWinner(draft.round.host);
+    return produce(result, (draft) => {
+      setAvailableModes(draft);
     });
   }
 
   if (action.type === "guessWord" && state.step === "playing") {
-    return immer(state, (draft) => {});
+    const result = produce(state, (draft) => {
+      const word = removeAccents(action.word.toUpperCase());
+      const remainingLetters = getRemainingLetters(draft);
+
+      if (draft.round.wordsGuessed[word]) {
+        throw new Error("Palavra já usada");
+      }
+
+      draft.round.wordsGuessed[word] = true;
+
+      if (word === draft.round.word) {
+        draft.round.points[draft.round.turn] += remainingLetters;
+        setWinner(draft, draft.round.turn);
+        return;
+      }
+
+      draft.round.playerGuesses[draft.round.turn].words--;
+      draft.round.guessMode = "letter";
+
+      if (draft.round.playerGuesses[draft.round.turn].words === 0) {
+        draft.round.playerGuesses[draft.round.turn].letters = 0;
+      }
+
+      if (checkRoundOver(draft)) {
+        return;
+      }
+    });
+
+    return produce(result, (draft) => {
+      const next = getNextPlayer(draft);
+
+      if (next == null) {
+        const remainingLetters = getRemainingLetters(draft);
+        draft.round.points[draft.round.host] += remainingLetters;
+        setWinner(draft, draft.round.host);
+        return;
+      }
+
+      draft.round.turn = next.id;
+      setAvailableModes(draft);
+    });
+  }
+
+  if (action.type === "setGuessMode" && state.step === "playing") {
+    return produce(state, (draft) => {
+      draft.round.guessMode = action.mode;
+    });
+  }
+
+  if (action.type === "nextRound" && state.step === "playing") {
+    return produce(state, (draft) => {
+      for (const player of draft.game.players) {
+        draft.game.playerPoints[player.id] += draft.round.points[player.id];
+      }
+
+      setNextHost(draft);
+
+      // @ts-ignore
+      draft.step = "selectingWord";
+    });
   }
 
   return state;

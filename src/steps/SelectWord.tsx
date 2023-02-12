@@ -21,13 +21,7 @@ export function SelectWord() {
     e.preventDefault();
     const data = new FormData(e.target as HTMLFormElement);
 
-    const result = validate(
-      {
-        word: "aeroporto",
-        hint: "lugar",
-      } ?? Object.fromEntries(data),
-      selectWordSchema
-    );
+    const result = validate(Object.fromEntries(data), selectWordSchema);
 
     if (!result.success) {
       setErrors(result.errors);
@@ -38,7 +32,7 @@ export function SelectWord() {
     send({ type: "selectWord", ...result.data });
   }
 
-  if (type === "game") {
+  if (type === "presentation") {
     return <h1>Aguardando {host.name} escolher palavra...</h1>;
   }
 
