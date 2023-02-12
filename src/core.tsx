@@ -159,7 +159,7 @@ function getNextPlayer({
     if (step === "playing") {
       const guesses = round.playerGuesses[player.id];
 
-      if (round.turn === player.id) {
+      if (players.length > 2 && round.turn === player.id) {
         return false;
       }
 

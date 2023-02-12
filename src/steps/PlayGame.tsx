@@ -193,7 +193,7 @@ function WordPanel() {
         })}
       </div>
 
-      {type === "game" && round.winner == null && (
+      {type === "game" && round.winner == null ? (
         <div className="text-center">
           <button className="btn" onClick={toggle}>
             {show ? (
@@ -207,6 +207,8 @@ function WordPanel() {
             )}
           </button>
         </div>
+      ) : (
+        <div>&nbsp;</div>
       )}
     </div>
   );
@@ -256,7 +258,11 @@ function GuessOptions() {
   if (state.round.winner) {
     return (
       <div>
-        <button className="btn" onClick={() => send({ type: "nextRound" })}>
+        <button
+          className="btn"
+          onClick={() => send({ type: "nextRound" })}
+          autoFocus
+        >
           <span>Próxima rodada</span>
           <ArrowRightIcon />
         </button>
