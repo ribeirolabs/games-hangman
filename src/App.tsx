@@ -63,8 +63,10 @@ function AudioEffect() {
       }
     }
 
+    // @ts-ignore
     window.addEventListener("play-sound", listener);
 
+    // @ts-ignore
     return () => window.removeEventListener("play-sound", listener);
   }, []);
 
