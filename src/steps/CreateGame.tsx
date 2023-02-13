@@ -44,7 +44,7 @@ export function CreateGame() {
 
       <label>
         <span className="input-label">Máximo de letras chutadas</span>
-        <input name="max_letter_guesses" type="number" />
+        <input name="max_letter_guesses" type="number" autoFocus />
         {errors && errors.maxLetterGuesses && (
           <div className="div input-helper">
             <span>&nbsp;</span>

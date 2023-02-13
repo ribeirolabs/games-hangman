@@ -37,7 +37,7 @@ export function SelectWord() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col h-screen items-center justify-center">
       <h1 className="text-center mb-4">Escolha uma palavra, {host.name}</h1>
 
       <form className="mx-auto w-fit flex flex-col gap-4" onSubmit={onSubmit}>

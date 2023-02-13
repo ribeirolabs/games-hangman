@@ -160,10 +160,6 @@ function getNextPlayer({
     if (step === "playing") {
       const guesses = round.playerGuesses[player.id];
 
-      if (players.length > 2 && round.turn === player.id) {
-        return false;
-      }
-
       if (guesses.words > 0) {
         return true;
       }
@@ -177,7 +173,7 @@ function getNextPlayer({
   });
 
   if (step === "playing") {
-    const current = players.findIndex((p) => p.id === round.turn);
+    const current = available.findIndex((p) => p.id === round.turn);
 
     return available[(current + 1) % available.length];
   }
@@ -277,7 +273,7 @@ function checkRoundOver(draft: Draft<PlayingState>) {
     draft.round.points[draft.round.host] += draft.round.word.length;
 
     setWinner(draft, draft.round.host);
-    playSound("wrong");
+    playSound("lost");
     return true;
   }
 
@@ -311,6 +307,8 @@ export function reducer(state: State, action: Action): State {
     if (nextPlayer == null) {
       throw new Error("unable to find next player, invalid game");
     }
+
+    playSound("start");
 
     return {
       ...state,
@@ -395,10 +393,10 @@ export function reducer(state: State, action: Action): State {
   }
 
   if (action.type === "guessWord" && state.step === "playing") {
-    const result = produce(state, (draft) => {
-      const word = removeAccents(action.word.toUpperCase());
-      const remainingLetters = getRemainingLetters(draft);
+    const word = removeAccents(action.word.toUpperCase());
+    const remainingLetters = getRemainingLetters(state);
 
+    const result = produce(state, (draft) => {
       if (draft.round.wordsGuessed[word]) {
         playSound("wrong");
         return;
@@ -406,44 +404,48 @@ export function reducer(state: State, action: Action): State {
 
       draft.round.wordsGuessed[word] = true;
 
+      if (word !== draft.round.word) {
+        draft.round.playerGuesses[draft.round.turn].words--;
+        draft.round.guessMode = "letter";
+
+        if (draft.round.playerGuesses[draft.round.turn].words === 0) {
+          draft.round.playerGuesses[draft.round.turn].letters = 0;
+        }
+
+        const guesses = draft.round.playerGuesses[draft.round.turn];
+
+        if (checkRoundOver(draft)) {
+          return;
+        }
+
+        if (guesses.letters === 0 && guesses.words === 0) {
+          playSound("lost");
+        } else {
+          playSound("wrong");
+        }
+      }
+    });
+
+    return produce(result, (draft) => {
       if (word === draft.round.word) {
-        draft.round.points[draft.round.turn] += remainingLetters;
+        draft.round.points[draft.round.turn] +=
+          remainingLetters * getGuessWordBonus(draft);
+
         for (const letter of draft.round.word.split("")) {
           draft.round.lettersGuessed[letter] = true;
         }
+
         setWinner(draft, draft.round.turn);
         playSound("winner");
         return;
       }
 
-      draft.round.playerGuesses[draft.round.turn].words--;
-      draft.round.guessMode = "letter";
-
-      if (draft.round.playerGuesses[draft.round.turn].words === 0) {
-        draft.round.playerGuesses[draft.round.turn].letters = 0;
-      }
-
-      const guesses = draft.round.playerGuesses[draft.round.turn];
-
-      if (guesses.letters === 0 && guesses.words === 0) {
-        playSound("lost");
-      } else {
-        playSound("wrong");
-      }
-
-      if (checkRoundOver(draft)) {
-        return;
-      }
-    });
-
-    return produce(result, (draft) => {
       const next = getNextPlayer(draft);
 
       if (next == null) {
         const remainingLetters = getRemainingLetters(draft);
         draft.round.points[draft.round.host] += remainingLetters;
         setWinner(draft, draft.round.host);
-        playSound("wrong");
         return;
       }
 
@@ -552,4 +554,12 @@ export function useGameState<S extends State["step"]>(step: S) {
 
 export function useGameAction() {
   return useContext(ActionContext);
+}
+
+export const SOUNDS = ["correct", "start", "lost", "wrong", "winner"] as const;
+
+export type GameSound = typeof SOUNDS[number];
+
+export function getGuessWordBonus(state: PlayingState) {
+  return Object.keys(state.round.lettersGuessed).length === 0 ? 2 : 1;
 }

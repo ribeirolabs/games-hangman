@@ -1,8 +1,9 @@
 import correctAudio from "./assets/correct.mp3";
+import startAudio from "./assets/start.mp3";
 import lostAudio from "./assets/lost.mp3";
 import wrongAudio from "./assets/wrong.mp3";
 import winnerAudio from "./assets/winner.mp3";
-import { GameProvider, ScreenType } from "./core";
+import { GameProvider, ScreenType, SOUNDS } from "./core";
 import { CreateGame } from "./steps/CreateGame";
 import { SelectScreenType } from "./steps/SelectScreenType";
 import { SelectWord } from "./steps/SelectWord";
@@ -37,9 +38,10 @@ function App() {
 function AudioEffect() {
   const connected = useRef<Record<string, HTMLAudioElement>>({});
   const audioContext = useRef(new AudioContext());
+  const timeout = useRef<number | null>(null);
 
   useEffect(() => {
-    ["correct", "lost", "wrong", "winner"].forEach((id) => {
+    SOUNDS.forEach((id) => {
       if (connected.current[id]) {
         return;
       }
@@ -53,6 +55,10 @@ function AudioEffect() {
     function listener(e: CustomEvent<{ id: string }>) {
       const audio = connected.current[e.detail.id];
 
+      if (timeout.current) {
+        clearTimeout(timeout.current);
+      }
+
       if (audioContext.current.state === "suspended") {
         audioContext.current.resume();
       }
@@ -60,6 +66,7 @@ function AudioEffect() {
       if (audio) {
         audio.currentTime = 0;
         audio.play();
+        timeout.current = setTimeout(() => audio.pause(), 2500);
       }
     }
 
@@ -73,6 +80,7 @@ function AudioEffect() {
   return (
     <>
       <audio id="correct" src={correctAudio}></audio>
+      <audio id="start" src={startAudio}></audio>
       <audio id="lost" src={lostAudio}></audio>
       <audio id="wrong" src={wrongAudio}></audio>
       <audio id="winner" src={winnerAudio}></audio>

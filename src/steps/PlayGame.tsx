@@ -1,11 +1,18 @@
-import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowRightIcon,
   BlockIcon,
   ChatIcon,
   PencilIcon,
 } from "../components/Icons";
-import { useGameAction, useGameState } from "../core";
+import { getGuessWordBonus, useGameAction, useGameState } from "../core";
 import { cn } from "../utils";
 
 export function PlayGame() {
@@ -268,6 +275,18 @@ function GuessOptions() {
     return () => channel.current.removeEventListener("message", listener);
   }, [state.type]);
 
+  const remainingLetters = state.round.word
+    .split("")
+    .filter((w) => !state.round.lettersGuessed[w]).length;
+
+  const availablePoints = useMemo(() => {
+    const bonus = getGuessWordBonus(state);
+    return {
+      letter: 1,
+      word: remainingLetters * bonus,
+    };
+  }, [remainingLetters, state]);
+
   if (state.round.winner) {
     return (
       <div>
@@ -293,13 +312,16 @@ function GuessOptions() {
                 <button
                   onClick={() => send({ type: "setGuessMode", mode })}
                   className={cn(
-                    "rounded-full px-6 py-2 border border-gray-400 uppercase tracking-wider",
+                    "inline-flex items-center flex-col rounded-full px-6 pt-2 pb-5 border border-gray-400 uppercase tracking-wider relative",
                     mode === state.round.guessMode
                       ? "bg-info-700 border-transparent text-white"
                       : "text-black"
                   )}
                 >
-                  Chutar {LABEL[mode]}
+                  <span>Chutar {LABEL[mode]}</span>
+                  <span className="text-sm absolute left-0 bottom-1 w-full text-center">
+                    +{availablePoints[mode]}
+                  </span>
                 </button>
 
                 {i < options.length - 1 && (

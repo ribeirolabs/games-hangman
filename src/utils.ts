@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Player } from "./core";
+import { GameSounds as GameSound, Player } from "./core";
 
 export function validate<T extends z.ZodSchema>(
   data: unknown,
@@ -42,7 +42,7 @@ export function cn(...classes: (string | boolean | null)[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
-export function playSound(id: "winner" | "correct" | "wrong" | "lost") {
+export function playSound(id: GameSound) {
   window.dispatchEvent(
     new CustomEvent("play-sound", {
       detail: {
