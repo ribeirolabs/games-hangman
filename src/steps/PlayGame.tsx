@@ -11,6 +11,7 @@ import {
   BlockIcon,
   ChatIcon,
   PencilIcon,
+  TrophyIcon,
 } from "../components/Icons";
 import { getGuessWordBonus, useGameAction, useGameState } from "../core";
 import { cn } from "../utils";
@@ -34,14 +35,23 @@ export function PlayGame() {
             Letras
           </span>
           <div className="flex h-8 gap-1">
-            {Object.keys(state.round.lettersGuessed).map((letter) => (
-              <div
-                key={letter}
-                className="bg-neutral-700 text-white flex justify-center items-center font-extrabold rounded-full w-8 text-xl"
-              >
-                {letter}
-              </div>
-            ))}
+            {Object.keys(state.round.lettersGuessed).map((letter) => {
+              const isCorrect = state.round.word.includes(letter);
+
+              return (
+                <div
+                  key={letter}
+                  className={cn(
+                    "text-black flex justify-center items-center font-extrabold rounded-full w-8 text-xl",
+                    isCorrect
+                      ? "bg-green-200 border border-green-600"
+                      : "bg-red-200 border border-red-600"
+                  )}
+                >
+                  {letter}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -50,14 +60,23 @@ export function PlayGame() {
             Palavras
           </span>
           <div className="flex h-8 gap-1">
-            {Object.keys(state.round.wordsGuessed).map((word) => (
-              <div
-                key={word}
-                className="bg-neutral-700 text-white flex justify-center items-center font-extrabold rounded-full text-sm px-4"
-              >
-                {word}
-              </div>
-            ))}
+            {Object.keys(state.round.wordsGuessed).map((word) => {
+              const isCorrect = word === state.round.word;
+
+              return (
+                <div
+                  key={word}
+                  className={cn(
+                    "text-black flex justify-center items-center font-extrabold rounded-full text-sm px-4",
+                    isCorrect
+                      ? "bg-green-200 border border-green-600"
+                      : "bg-red-200 border border-red-600"
+                  )}
+                >
+                  {word}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -80,7 +99,7 @@ function Players() {
     .sort((a, b) => (a.state === "host" ? -1 : b.state === "host" ? 1 : 0));
 
   return (
-    <header className="p-3 pt-12 gap-3 flex w-full bg-neutral-900">
+    <header className="p-3 pt-12 gap-3 flex w-full bg--neutral-900">
       {players.map((player) => {
         const isHost = round.host === player.id;
         const isWinner = round.winner === player.id;
@@ -88,32 +107,43 @@ function Players() {
         const letterGuesses = round.playerGuesses[player.id].letters;
         const wordGuesses = round.playerGuesses[player.id].words;
         const isOut = wordGuesses > 0 ? false : letterGuesses === 0;
+        const roundPoints = round.points[player.id];
 
         return (
           <div
             key={player.id}
             className={cn(
-              "flex-1 flex flex-col text-white rounded relative",
+              "flex-1 flex flex-col text-white rounded-lg overflow-hidden relative",
               isWinner
-                ? "bg-green-400 text-black/70 animate-pulse"
+                ? "bg-green-700 text-black/70 animate-bounce"
+                : isHost && round.winner && !isWinner
+                ? "bg-red-900"
                 : isHost
                 ? "bg-info-700"
                 : isTurn
-                ? "animate-bounce bg-neutral-200/40"
+                ? "animate--pulse bg-neutral-900"
                 : isOut
-                ? "opacity-40"
+                ? "bg-neutral-900/20 text-black/20"
                 : "bg-neutral-700"
             )}
           >
-            <div className="flex justify-between p-2">
+            <div className="flex justify-between p-2 px-4">
               <div
                 className={cn(
                   "flex items-center justify-center gap-2 text-3xl uppercase font-bold flex-grow-0 tracking-wider"
                 )}
               >
                 <span>{player.name}</span>
-                {isHost && <PencilIcon />}
-                {isTurn && <ChatIcon />}
+              </div>
+
+              <div className="flex items-center">
+                {isHost && round.winner == null && <PencilIcon />}
+                {isTurn && (
+                  <div className="animate-bounce">
+                    <ChatIcon />
+                  </div>
+                )}
+                {isWinner && <TrophyIcon />}
                 {isOut && <BlockIcon />}
               </div>
 
@@ -124,7 +154,8 @@ function Players() {
 
             <div
               className={cn(
-                "flex-1 flex justify-between font-bold p-2 bg-neutral-800/30 uppercase"
+                "flex-1 flex justify-between font-bold p-2 bg-neutral-800/30 uppercase",
+                isOut && "bg-transparent"
               )}
             >
               {isHost ? null : (
@@ -142,8 +173,10 @@ function Players() {
 
               <div className="h-full flex items-center justify-end flex-1">
                 <div className="flex items-center justify-center">
-                  <div className="text-xl">+</div>
-                  <div className="text-4xl">{round.points[player.id]}</div>
+                  <div className="text-xl">
+                    {roundPoints === 0 ? "" : roundPoints > 0 ? "+" : "-"}
+                  </div>
+                  <div className="text-4xl">{Math.abs(roundPoints)}</div>
                 </div>
               </div>
             </div>
@@ -166,10 +199,13 @@ function WordPanel() {
 
   return (
     <div className="flex-1 flex flex-col justify-center gap-4">
-      <h1 className="text-center">{round.hint}</h1>
+      <h1 className="text-center">
+        {round.hint} com {round.word.replace(/\s/g, "").length} letras
+      </h1>
       <div className="w-fit flex gap-2 h-16 items-center justify-center mx-auto">
         {letters.map((letter, i) => {
           const isGuessed = round.lettersGuessed[letter];
+          const isSpace = letter === " ";
           const winner =
             round.winner == null
               ? null
@@ -181,7 +217,9 @@ function WordPanel() {
             <div
               className={cn(
                 "flex-1 w-16 h-full rounded flex items-center justify-center text-5xl font-extrabold",
-                isGuessed || winner === "player"
+                isSpace
+                  ? "bg-white  border-dotted border-gray-400"
+                  : isGuessed || winner === "player"
                   ? "bg-green-200 border border-green-600"
                   : winner === "host"
                   ? "bg-red-200 border border-red-600"

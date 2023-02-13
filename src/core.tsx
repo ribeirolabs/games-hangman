@@ -427,9 +427,13 @@ export function reducer(state: State, action: Action): State {
     });
 
     return produce(result, (draft) => {
+      const bonus = getGuessWordBonus(draft);
       if (word === draft.round.word) {
-        draft.round.points[draft.round.turn] +=
-          remainingLetters * getGuessWordBonus(draft);
+        draft.round.points[draft.round.turn] += remainingLetters * bonus;
+
+        if (bonus > 1) {
+          draft.round.points[draft.round.host] -= remainingLetters;
+        }
 
         for (const letter of draft.round.word.split("")) {
           draft.round.lettersGuessed[letter] = true;
