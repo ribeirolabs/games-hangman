@@ -41,3 +41,13 @@ export function getPlayer(players: Player[], id: string) {
 export function cn(...classes: (string | boolean | null)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+export function playSound(id: "winner" | "correct" | "wrong" | "lost") {
+  window.dispatchEvent(
+    new CustomEvent("play-sound", {
+      detail: {
+        id,
+      },
+    })
+  );
+}

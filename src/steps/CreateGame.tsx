@@ -1,14 +1,6 @@
 import { useState, FormEvent } from "react";
 import { useGameAction, gameSchema, useGameState } from "../core";
 import { ValidationErrors, validate } from "../utils";
-const PLAYERS: string[] = ["Igor", "Nay", "Lucia", "Livia"];
-
-const GAME = {
-  maxLetterGuesses: 2,
-  maxWordGuesses: 1,
-  id: crypto.randomUUID(),
-  players: PLAYERS,
-};
 
 export function CreateGame() {
   const { type } = useGameState("creatingGame");

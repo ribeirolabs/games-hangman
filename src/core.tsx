@@ -1,5 +1,5 @@
 import removeAccents from "remove-accents";
-import produce, { Draft, finishDraft, current } from "immer";
+import produce, { Draft } from "immer";
 import {
   createContext,
   Dispatch,
@@ -11,6 +11,7 @@ import {
   useReducer,
 } from "react";
 import { z } from "zod";
+import { playSound } from "./utils";
 
 export const playersSchema = z.preprocess(
   (input) => {
@@ -276,7 +277,7 @@ function checkRoundOver(draft: Draft<PlayingState>) {
     draft.round.points[draft.round.host] += draft.round.word.length;
 
     setWinner(draft, draft.round.host);
-
+    playSound("wrong");
     return true;
   }
 
@@ -337,11 +338,13 @@ export function reducer(state: State, action: Action): State {
 
       if (state.round.lettersGuessed[letter]) {
         console.log("letter guessed");
+        playSound("wrong");
         return;
       }
 
       if (state.round.playerGuesses[state.round.turn].letters <= 0) {
         console.log("no more letter guesses");
+        playSound("wrong");
         return;
       }
 
@@ -358,15 +361,26 @@ export function reducer(state: State, action: Action): State {
         draft.round.points[draft.round.turn] += occurences;
 
         if (remainingLetters === 0) {
+          playSound("winner");
           setWinner(draft, draft.round.turn);
           return;
         }
+
+        playSound("correct");
 
         return;
       }
 
       draft.round.playerGuesses[draft.round.turn].letters--;
       draft.round.points[draft.round.host]++;
+
+      const guesses = draft.round.playerGuesses[draft.round.turn];
+
+      if (guesses.letters === 0 && guesses.words === 0) {
+        playSound("lost");
+      } else {
+        playSound("wrong");
+      }
 
       if (checkRoundOver(draft)) {
         return;
@@ -386,14 +400,19 @@ export function reducer(state: State, action: Action): State {
       const remainingLetters = getRemainingLetters(draft);
 
       if (draft.round.wordsGuessed[word]) {
-        throw new Error("Palavra já usada");
+        playSound("wrong");
+        return;
       }
 
       draft.round.wordsGuessed[word] = true;
 
       if (word === draft.round.word) {
         draft.round.points[draft.round.turn] += remainingLetters;
+        for (const letter of draft.round.word.split("")) {
+          draft.round.lettersGuessed[letter] = true;
+        }
         setWinner(draft, draft.round.turn);
+        playSound("winner");
         return;
       }
 
@@ -402,6 +421,14 @@ export function reducer(state: State, action: Action): State {
 
       if (draft.round.playerGuesses[draft.round.turn].words === 0) {
         draft.round.playerGuesses[draft.round.turn].letters = 0;
+      }
+
+      const guesses = draft.round.playerGuesses[draft.round.turn];
+
+      if (guesses.letters === 0 && guesses.words === 0) {
+        playSound("lost");
+      } else {
+        playSound("wrong");
       }
 
       if (checkRoundOver(draft)) {
@@ -416,6 +443,7 @@ export function reducer(state: State, action: Action): State {
         const remainingLetters = getRemainingLetters(draft);
         draft.round.points[draft.round.host] += remainingLetters;
         setWinner(draft, draft.round.host);
+        playSound("wrong");
         return;
       }
 

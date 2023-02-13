@@ -1,4 +1,4 @@
-import { FormEvent, Fragment, useEffect, useState } from "react";
+import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
 import {
   ArrowRightIcon,
   BlockIcon,
@@ -98,47 +98,46 @@ function Players() {
                 : "bg-neutral-700"
             )}
           >
-            <div
-              className={cn(
-                "py-1 flex items-center justify-center flex-1 gap-2 text-xl uppercase font-bold flex-grow-0"
-              )}
-            >
-              {isHost && <PencilIcon />}
-              {isTurn && <ChatIcon />}
-              {isOut && <BlockIcon />}
-              <span>{player.name}</span>
+            <div className="flex justify-between p-2">
+              <div
+                className={cn(
+                  "flex items-center justify-center gap-2 text-3xl uppercase font-bold flex-grow-0 tracking-wider"
+                )}
+              >
+                <span>{player.name}</span>
+                {isHost && <PencilIcon />}
+                {isTurn && <ChatIcon />}
+                {isOut && <BlockIcon />}
+              </div>
+
+              <div className="text-3xl font-extrabold">
+                {game.playerPoints[player.id]}
+              </div>
             </div>
 
             <div
               className={cn(
-                "flex justify-between font-bold p-2 bg-neutral-800/30"
+                "flex-1 flex justify-between font-bold p-2 bg-neutral-800/30 uppercase"
               )}
             >
-              <div className="flex-1 text-center">
-                <div className="text-[10px] uppercase">Pontos</div>
-                <div className="text-2xl">{game.playerPoints[player.id]}</div>
-              </div>
-
               {isHost ? null : (
-                <>
+                <div className="flex justify-around flex-[2]">
                   <div className="flex-1 text-center">
-                    <div className="text-[10px] uppercase">Letras</div>
+                    <div className="text-[10px]">Letras</div>
                     <div className="text-2xl">{letterGuesses}</div>
                   </div>
                   <div className="flex-1 text-center">
-                    <div className="text-[10px] uppercase">Palavras</div>
+                    <div className="text-[10px]">Chutes</div>
                     <div className="text-2xl">{wordGuesses}</div>
                   </div>
-                </>
+                </div>
               )}
-            </div>
 
-            <div className="flex-1 flex flex-col p-2 font-extrabold uppercase items-center">
-              <div className="text-xs">
-                {round.winner ? "Ganhou" : "Ganhando"}
-              </div>
-              <div className="flex items-baseline gap-2 justify-center">
-                <div className="text-2xl">{round.points[player.id]}</div>
+              <div className="h-full flex items-center justify-end flex-1">
+                <div className="flex items-center justify-center">
+                  <div className="text-xl">+</div>
+                  <div className="text-4xl">{round.points[player.id]}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -150,7 +149,7 @@ function Players() {
 
 function WordPanel() {
   const { round, type } = useGameState("playing");
-  const [show, setShow] = useState(type === "game");
+  const [show, setShow] = useState(false);
 
   const letters = round.word.split("");
 
@@ -185,9 +184,7 @@ function WordPanel() {
               )}
               key={`${letter}-${i}`}
             >
-              {(type === "presentation" && isGuessed) || round.winner || show
-                ? letter
-                : null}
+              {isGuessed || round.winner || show ? letter : null}
             </div>
           );
         })}
@@ -222,6 +219,8 @@ const LABEL = {
 function GuessOptions() {
   const state = useGameState("playing");
   const send = useGameAction();
+  const [word, setWord] = useState("");
+  const channel = useRef(new BroadcastChannel("hangman/guess-word"));
 
   useEffect(() => {
     if (state.type === "presentation" || state.round.guessMode === "word") {
@@ -255,6 +254,20 @@ function GuessOptions() {
     target.reset();
   }
 
+  useEffect(() => {
+    if (state.type === "game") {
+      return;
+    }
+
+    function listener(e: MessageEvent<string>) {
+      setWord(e.data);
+    }
+
+    channel.current.addEventListener("message", listener);
+
+    return () => channel.current.removeEventListener("message", listener);
+  }, [state.type]);
+
   if (state.round.winner) {
     return (
       <div>
@@ -272,38 +285,49 @@ function GuessOptions() {
 
   return (
     <>
-      {state.type === "game" && (
-        <div className="flex w-fit text-white uppercase font-extrabold text-lg items-center gap-4">
-          {state.round.guessModeOptions.map((mode, i, options) => (
-            <Fragment key={mode}>
-              <button
-                onClick={() => send({ type: "setGuessMode", mode })}
-                className={cn(
-                  "rounded-full px-6 py-2 border border-gray-400 uppercase tracking-wider",
-                  mode === state.round.guessMode
-                    ? "bg-info-700 border-transparent text-white"
-                    : "text-black"
+      {state.type === "game" ? (
+        <>
+          <div className="flex w-fit text-white uppercase font-extrabold text-lg items-center gap-4">
+            {state.round.guessModeOptions.map((mode, i, options) => (
+              <Fragment key={mode}>
+                <button
+                  onClick={() => send({ type: "setGuessMode", mode })}
+                  className={cn(
+                    "rounded-full px-6 py-2 border border-gray-400 uppercase tracking-wider",
+                    mode === state.round.guessMode
+                      ? "bg-info-700 border-transparent text-white"
+                      : "text-black"
+                  )}
+                >
+                  Chutar {LABEL[mode]}
+                </button>
+
+                {i < options.length - 1 && (
+                  <span className="text-gray-600 text-sm">ou</span>
                 )}
-              >
-                Chutar {LABEL[mode]}
-              </button>
+              </Fragment>
+            ))}
+          </div>
 
-              {i < options.length - 1 && (
-                <span className="text-gray-600 text-sm">ou</span>
-              )}
-            </Fragment>
-          ))}
-        </div>
-      )}
-
-      {state.round.guessMode === "word" && (
-        <form onSubmit={onSubmit}>
-          <label className="input-label col-start-1 row-start-1">
-            <span>Palavra</span>
-            <input type="text" name="word" autoFocus />
-          </label>
-        </form>
-      )}
+          {state.round.guessMode === "word" && (
+            <form onSubmit={onSubmit}>
+              <label className="input-label col-start-1 row-start-1">
+                <span>Palavra</span>
+                <input
+                  type="text"
+                  name="word"
+                  autoFocus
+                  onChange={(e) => {
+                    channel.current.postMessage(e.target.value.toUpperCase());
+                  }}
+                />
+              </label>
+            </form>
+          )}
+        </>
+      ) : state.round.guessMode === "word" ? (
+        <h1>chute: {word}</h1>
+      ) : null}
     </>
   );
 }
