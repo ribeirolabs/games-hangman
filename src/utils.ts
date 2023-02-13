@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GameSounds as GameSound, Player } from "./core";
+import { GameSound, Player } from "./core";
 
 export function validate<T extends z.ZodSchema>(
   data: unknown,
