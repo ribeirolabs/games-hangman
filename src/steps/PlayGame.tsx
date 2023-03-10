@@ -193,16 +193,20 @@ function WordPanel() {
 
   const letters = round.word.split("");
 
+  const spaces = letters
+    .map((letter, i) => (letter === " " ? i : false))
+    .filter((value) => value !== false) as number[];
+
   function toggle() {
     setShow((current) => !current);
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-center gap-4">
+    <div className="flex flex-col gap-4 bg-white rounded-md shadow-[0px_0px_0px_6px_rgba(0_0_0/25%)] p-3">
       <h1 className="text-center">
         {round.hint} com {round.word.replace(/\s/g, "").length} letras
       </h1>
-      <div className="w-fit flex gap-2 h-16 items-center justify-center mx-auto">
+      <div className="w-fit flex gap-1 items-center justify-center mx-auto">
         {letters.map((letter, i) => {
           const isGuessed = round.lettersGuessed[letter];
           const isSpace = letter === " ";
@@ -213,30 +217,47 @@ function WordPanel() {
               ? "host"
               : "player";
 
+          const index =
+            spaces.reduce(
+              (index, space) =>
+                i === space ? 0 : i > space ? index - 1 : index,
+              i
+            ) + 1;
+
           return (
             <div
               className={cn(
-                "flex-1 w-16 h-full rounded flex items-center justify-center text-5xl font-extrabold",
+                "w-12 h-16 rounded-md flex flex-col p-0.5 text-5xl font-extrabold relative",
                 isSpace
-                  ? "bg-white  border-dotted border-gray-400"
+                  ? "bg-white w-8  border-dotted border-gray-400"
                   : isGuessed || winner === "player"
-                  ? "bg-green-200 border border-green-600"
+                  ? "bg-green-200 border-2 border-green-600"
                   : winner === "host"
-                  ? "bg-red-200 border border-red-600"
+                  ? "bg-red-200 border-2 border-red-600"
                   : show
                   ? "border-2 border-dotted border-gray-400 text-gray-400"
-                  : "bg-gray-300"
+                  : "bg-gray-300 border-2 border-gray-400"
               )}
               key={`${letter}-${i}`}
             >
-              {isGuessed || round.winner || show ? letter : null}
+              {letter === " " ? null : (
+                <span className="text-xs font-bold text-left">{index}</span>
+              )}
+
+              <div className="text-center">
+                {isGuessed || round.winner || show ? (
+                  letter
+                ) : (
+                  <span>&nbsp;</span>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
       {type === "game" && round.winner == null ? (
-        <div className="text-center">
+        <div className="text-center hidden">
           <button className="btn" onClick={toggle}>
             {show ? (
               <>

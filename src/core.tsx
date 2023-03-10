@@ -241,7 +241,8 @@ function setWinner(draft: Draft<PlayingState>, id: string) {
 function getRemainingLetters(state: PlayingState) {
   return state.round.word
     .split("")
-    .filter((word) => !state.round.lettersGuessed[word]).length;
+    .filter((letter) => !state.round.lettersGuessed[letter] && letter !== " ")
+    .length;
 }
 
 function setAvailableModes(draft: Draft<PlayingState>) {
@@ -436,6 +437,9 @@ export function reducer(state: State, action: Action): State {
         }
 
         for (const letter of draft.round.word.split("")) {
+          if (letter === " ") {
+            continue;
+          }
           draft.round.lettersGuessed[letter] = true;
         }
 

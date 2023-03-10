@@ -8,13 +8,17 @@
     font-family: sans-serif;
   }
 
+  body {
+    background-image: url(/hangman/public/bg-tile.png);
+  }
+
   label {
     display: block;
   }
 
   input,
   textarea {
-    @apply border border-gray-400 rounded h-10 bg-gray-200 p-2 w-full font-normal focus:bg-white;
+    @apply border-2 border-gray-300 rounded h-10 bg-gray-100 p-2 w-full font-normal focus:bg-white focus:border-gray-500 outline-none;
   }
 
   textarea {
@@ -32,15 +36,15 @@
   }
 
   .btn {
-    @apply rounded-lg h-10 px-6 bg-gray-300 font-bold uppercase tracking-wider inline-flex gap-2 items-center justify-center;
+    @apply rounded-lg h-10 px-6 bg-gray-300 font-bold uppercase tracking-wider inline-flex gap-2 items-center justify-center shadow-outline;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary/80;
   }
 
   .btn-positive {
-    @apply bg-positive text-positive-content;
-
-    &:hover {
-      @apply bg-positive-hover;
-    }
+    @apply bg-positive text-positive-content hover:bg-positive-hover;
   }
 
   .input-label {

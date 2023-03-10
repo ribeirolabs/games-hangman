@@ -5,6 +5,7 @@ module.exports = {
     extend: {
       colors({ colors }) {
         return {
+          primary: "#246A88",
           positive: colors.green["700"],
           "positive-hover": colors.green["800"],
           "positive-content": colors.white,
@@ -14,6 +15,9 @@ module.exports = {
           info: colors.sky,
           warning: colors.amber,
         };
+      },
+      boxShadow: {
+        outline: "inset 0 0 0 4px rgb(0 0 0 / 25%)",
       },
     },
   },
