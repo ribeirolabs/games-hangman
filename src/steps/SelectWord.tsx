@@ -38,9 +38,11 @@ export function SelectWord() {
 
   return (
     <div className="flex flex-col h-screen items-center justify-center">
-      <h1 className="text-center mb-4">Escolha uma palavra, {host.name}</h1>
-
-      <form className="mx-auto w-fit flex flex-col gap-4" onSubmit={onSubmit}>
+      <form
+        className="bg-white p-4 shadow-outline rounded-lg mx-auto w-fit flex flex-col gap-4"
+        onSubmit={onSubmit}
+      >
+        <h1 className="text-center mb-4">Escolha uma palavra, {host.name}</h1>
         <div className="grid grid-cols-1 grid-rows-1 h-16">
           <label className="input-label col-start-1 row-start-1">
             <input
@@ -60,12 +62,12 @@ export function SelectWord() {
             />
           </label>
 
-          <div className="h-full bg-white flex gap-2 items-center justify-center col-start-1 row-start-1 pointer-events-none">
+          <div className="bg-white flex gap-1 items-center justify-center col-start-1 row-start-1 pointer-events-none">
             {value.split("").map((char, i) => (
               <div
                 key={char + i}
                 className={cn(
-                  "text-4xl text-bold w-12 h-full flex items-center justify-center rounded",
+                  "text-4xl font-bold w-10 h-14 flex items-center justify-center rounded",
                   char === " "
                     ? "border-2 border-dotted border-gray-300"
                     : "bg-gray-300"
@@ -77,9 +79,9 @@ export function SelectWord() {
 
             <div
               className={cn(
-                "h-full w-12 rounded border--dotted",
+                "h-14 w-10 rounded border--dotted",
                 focused
-                  ? "border-gray-800 animate-pulse bg-white border-2 duration-75"
+                  ? "border-blue-400 bg-white border-2 duration-75"
                   : "border-gray-500 bg-gray-200 border"
               )}
             ></div>
@@ -91,7 +93,7 @@ export function SelectWord() {
           </span>
         )}
 
-        <div className="form">
+        <div className="form w-fit">
           <label>
             <span className="input-label">Dica</span>
             <input type="text" name="hint" />

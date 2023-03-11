@@ -4,8 +4,10 @@ specifiers:
   '@supabase/supabase-js': ^2.10.0
   '@types/react': ^18.0.27
   '@types/react-dom': ^18.0.10
+  '@typescript/lib-dom': npm:@types/web@^0.0.96
   '@vitejs/plugin-react': ^3.1.0
   autoprefixer: ^10.4.13
+  formdata-submitter-polyfill: ^1.0.1
   immer: ^9.0.19
   postcss: ^8.4.21
   react: ^18.2.0
@@ -19,6 +21,7 @@ specifiers:
 
 dependencies:
   '@supabase/supabase-js': 2.10.0
+  formdata-submitter-polyfill: 1.0.1
   immer: 9.0.19
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
@@ -28,6 +31,7 @@ dependencies:
 devDependencies:
   '@types/react': 18.0.28
   '@types/react-dom': 18.0.11
+  '@typescript/lib-dom': /@types/web/0.0.96
   '@vitejs/plugin-react': 3.1.0_vite@4.1.4
   autoprefixer: 10.4.14_postcss@8.4.21
   postcss: 8.4.21
@@ -604,6 +608,10 @@ packages:
     resolution: {integrity: sha512-hppQEBDmlwhFAXKJX2KnWLYu5yMfi91yazPb2l+lbJiwW+wdo1gNeRA+3RgNSO39WYX2euey41KEwnqesU2Jew==}
     dev: true
 
+  /@types/web/0.0.96:
+    resolution: {integrity: sha512-F/p5tX0DALjtpePoQOiAIU1X46s9Ad+Utese2MBdIQWTc6DgNlLiLhIwxCOIfXfTjATPz5GVSDFZSSsC9//daw==}
+    dev: true
+
   /@vitejs/plugin-react/3.1.0_vite@4.1.4:
     resolution: {integrity: sha512-AfgcRL8ZBhAlc3BFdigClmTUMISmmzHn7sB2h9U1odvc5U/MjWXsAaz18b/WoppUTDBzxOJwo2VdClfUcItu9g==}
     engines: {node: ^14.18.0 || >=16.0.0}
@@ -924,6 +932,10 @@ packages:
     dependencies:
       to-regex-range: 5.0.1
     dev: true
+
+  /formdata-submitter-polyfill/1.0.1:
+    resolution: {integrity: sha512-BDJymraQuajkpqRem97ruF8x0ROGzyr7Da5ga+6Vn1Yz+5uxf4MLSQZQ0iStkBEEJDTf45hO2IZO3DLonTkRQw==}
+    dev: false
 
   /fraction.js/4.2.0:
     resolution: {integrity: sha512-MhLuK+2gUcnZe8ZHlaaINnQLl0xRIGRfcGk2yl8xoQAfHrSsL3rYu6FCmBdkdbhc9EPlwyGHewaRsvwRMJtAlA==}

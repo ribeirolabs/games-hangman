@@ -3,37 +3,30 @@ import startAudio from "./assets/start.mp3";
 import lostAudio from "./assets/lost.mp3";
 import wrongAudio from "./assets/wrong.mp3";
 import winnerAudio from "./assets/winner.mp3";
-import { GameProvider, ScreenType, SOUNDS } from "./core";
+import { GameProvider, ScreenType, SOUNDS, State } from "./core";
 import { CreateGame } from "./steps/CreateGame";
 import { SelectScreenType } from "./steps/SelectScreenType";
 import { SelectWord } from "./steps/SelectWord";
 import { PlayGame } from "./steps/PlayGame";
-import { useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 
 function App() {
-  const screenType = (new URLSearchParams(window.location.search).get(
-    "screen_type"
-  ) ?? "game") as ScreenType;
-
   return (
-    <GameProvider
-      initial={{
-        step: "creatingGame",
-        type: screenType,
-      }}
-    >
+    <GameProvider>
       {(state) => (
-        <div>
+        <>
           {state.step === "selectingScreenType" && <SelectScreenType />}
           {state.step === "creatingGame" && <CreateGame />}
           {state.step === "selectingWord" && <SelectWord />}
           {state.step === "playing" && <PlayGame />}
           <AudioEffect />
-        </div>
+        </>
       )}
     </GameProvider>
   );
 }
+
+function StoreGame({ state }: { state: State }) {}
 
 function AudioEffect() {
   const connected = useRef<Record<string, HTMLAudioElement>>({});

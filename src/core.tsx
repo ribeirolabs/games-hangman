@@ -140,6 +140,12 @@ type Action =
       letter: string;
     }
   | {
+      type: "pass";
+    }
+  | {
+      type: "restart";
+    }
+  | {
       type: "setGuessMode";
       mode: GuessMode;
     }
@@ -271,7 +277,7 @@ function checkRoundOver(draft: Draft<PlayingState>) {
   }, 0);
 
   if (remainingLetters === 0 || remainingGuesses === 0) {
-    draft.round.points[draft.round.host] += draft.round.word.length;
+    // draft.round.points[draft.round.host] += draft.round.word.length;
 
     setWinner(draft, draft.round.host);
     playSound("lost");
@@ -353,11 +359,11 @@ export function reducer(state: State, action: Action): State {
       const hasLetter = draft.round.word.includes(letter);
 
       if (hasLetter) {
-        const occurences = draft.round.word
-          .split("")
-          .filter((l) => l === letter).length;
+        // const occurences = draft.round.word
+        //   .split("")
+        //   .filter((l) => l === letter).length;
 
-        draft.round.points[draft.round.turn] += occurences;
+        draft.round.points[draft.round.turn] += 1;
 
         if (remainingLetters === 0) {
           playSound("winner");
@@ -408,6 +414,10 @@ export function reducer(state: State, action: Action): State {
       if (word !== draft.round.word) {
         draft.round.playerGuesses[draft.round.turn].words--;
         draft.round.guessMode = "letter";
+
+        if (draft.round.playerGuesses[draft.round.turn].words === 0) {
+          draft.round.points[draft.round.host]++;
+        }
 
         if (draft.round.playerGuesses[draft.round.turn].words === 0) {
           draft.round.playerGuesses[draft.round.turn].letters = 0;
@@ -481,6 +491,19 @@ export function reducer(state: State, action: Action): State {
     });
   }
 
+  if (action.type === "pass" && state.step === "playing") {
+    return produce(state, (draft) => {
+      setNextPlayer(draft);
+    });
+  }
+
+  if (action.type === "restart" && state.step === "playing") {
+    return {
+      step: "creatingGame",
+      type: state.type,
+    };
+  }
+
   return state;
 }
 
@@ -505,14 +528,39 @@ function ActionProvider({
   );
 }
 
+function getStorageKey(type: ScreenType) {
+  return `game-${type}`;
+}
+
 export function GameProvider({
-  initial = { step: "selectingScreenType" },
   children,
 }: {
-  initial?: State;
   children: (state: State) => JSX.Element;
 }) {
-  const [state, send] = useReducer(reducer, initial);
+  const screenType = (new URLSearchParams(window.location.search).get(
+    "screen_type"
+  ) ?? "game") as ScreenType;
+
+  const [state, send] = useReducer(reducer, screenType, (screenType) => {
+    try {
+      const local = window.localStorage.getItem(getStorageKey(screenType));
+
+      if (!local) {
+        throw new Error("No local game");
+      }
+
+      return JSON.parse(local);
+    } catch (e: any) {
+      return screenType
+        ? {
+            step: "creatingGame",
+            type: screenType,
+          }
+        : {
+            step: "selectingScreenType",
+          };
+    }
+  });
 
   const channel = useMemo(() => new BroadcastChannel("hangman"), []);
 
@@ -527,6 +575,13 @@ export function GameProvider({
     },
     [channel]
   );
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      getStorageKey(screenType),
+      JSON.stringify(state)
+    );
+  }, [state, screenType]);
 
   useEffect(() => {
     function listener(event: { data: string }) {

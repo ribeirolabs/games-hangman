@@ -20,66 +20,16 @@ export function PlayGame() {
   const state = useGameState("playing");
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex px-4 gap-16 flex-col h-screen">
       <Players />
 
-      <div className="p-4 flex flex-col gap-8 items-center flex-1">
+      <div className="flex flex-col gap-8 items-center flex-1">
         <WordPanel />
 
         <GuessOptions />
       </div>
 
-      <div className="p-4 w-full bg-gray-200 flex flex-col gap-3">
-        <div className="flex flex-col w-full justify-start">
-          <span className="uppercase tracking-wider font-extrabold text-sm">
-            Letras
-          </span>
-          <div className="flex h-8 gap-1">
-            {Object.keys(state.round.lettersGuessed).map((letter) => {
-              const isCorrect = state.round.word.includes(letter);
-
-              return (
-                <div
-                  key={letter}
-                  className={cn(
-                    "text-black flex justify-center items-center font-extrabold rounded-full w-8 text-xl",
-                    isCorrect
-                      ? "bg-green-200 border border-green-600"
-                      : "bg-red-200 border border-red-600"
-                  )}
-                >
-                  {letter}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex flex-col w-full justify-start">
-          <span className="uppercase tracking-wider font-extrabold text-sm">
-            Palavras
-          </span>
-          <div className="flex h-8 gap-1">
-            {Object.keys(state.round.wordsGuessed).map((word) => {
-              const isCorrect = word === state.round.word;
-
-              return (
-                <div
-                  key={word}
-                  className={cn(
-                    "text-black flex justify-center items-center font-extrabold rounded-full text-sm px-4",
-                    isCorrect
-                      ? "bg-green-200 border border-green-600"
-                      : "bg-red-200 border border-red-600"
-                  )}
-                >
-                  {word}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <Actions />
     </div>
   );
 }
@@ -99,7 +49,7 @@ function Players() {
     .sort((a, b) => (a.state === "host" ? -1 : b.state === "host" ? 1 : 0));
 
   return (
-    <header className="p-3 pt-12 gap-3 flex w-full bg--neutral-900">
+    <header className="p-3 pt-12 gap-3 flex w-full justify-center bg--neutral-900">
       {players.map((player) => {
         const isHost = round.host === player.id;
         const isWinner = round.winner === player.id;
@@ -113,7 +63,7 @@ function Players() {
           <div
             key={player.id}
             className={cn(
-              "flex-1 flex flex-col text-white rounded-lg overflow-hidden relative",
+              "flex min-w-[200px] flex-col text-white rounded-lg overflow-hidden relative",
               isWinner
                 ? "bg-green-700 text-black/70 animate-bounce"
                 : isHost && round.winner && !isWinner
@@ -121,7 +71,7 @@ function Players() {
                 : isHost
                 ? "bg-info-700"
                 : isTurn
-                ? "animate--pulse bg-neutral-900"
+                ? "animate--pulse bg-green-600"
                 : isOut
                 ? "bg-neutral-900/20 text-black/20"
                 : "bg-neutral-700"
@@ -230,7 +180,7 @@ function WordPanel() {
                 "w-12 h-16 rounded-md flex flex-col p-0.5 text-5xl font-extrabold relative",
                 isSpace
                   ? "bg-white w-8  border-dotted border-gray-400"
-                  : isGuessed || winner === "player"
+                  : winner === "player"
                   ? "bg-green-200 border-2 border-green-600"
                   : winner === "host"
                   ? "bg-red-200 border-2 border-red-600"
@@ -289,6 +239,7 @@ function GuessOptions() {
   const channel = useRef(new BroadcastChannel("hangman/guess-word"));
 
   useEffect(() => {
+    return;
     if (state.type === "presentation" || state.round.guessMode === "word") {
       return;
     }
@@ -410,5 +361,158 @@ function GuessOptions() {
         <h1>chute: {word}</h1>
       ) : null}
     </>
+  );
+}
+
+function Footer() {
+  const state = useGameState("playing");
+
+  return (
+    <div className="p-4 w-full bg-gray-200 flex flex-col gap-3">
+      <div className="flex flex-col w-full justify-start">
+        <span className="uppercase tracking-wider font-extrabold text-sm">
+          Letras
+        </span>
+        <div className="flex h-8 gap-1">
+          {Object.keys(state.round.lettersGuessed).map((letter) => {
+            const isCorrect = state.round.word.includes(letter);
+
+            return (
+              <div
+                key={letter}
+                className={cn(
+                  "text-black flex justify-center items-center font-extrabold rounded-full w-8 text-xl",
+                  isCorrect
+                    ? "bg-green-200 border border-green-600"
+                    : "bg-red-200 border border-red-600"
+                )}
+              >
+                {letter}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col w-full justify-start">
+        <span className="uppercase tracking-wider font-extrabold text-sm">
+          Palavras
+        </span>
+        <div className="flex h-8 gap-1">
+          {Object.keys(state.round.wordsGuessed).map((word) => {
+            const isCorrect = word === state.round.word;
+
+            return (
+              <div
+                key={word}
+                className={cn(
+                  "text-black flex justify-center items-center font-extrabold rounded-full text-sm px-4",
+                  isCorrect
+                    ? "bg-green-200 border border-green-600"
+                    : "bg-red-200 border border-red-600"
+                )}
+              >
+                {word}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+function Actions() {
+  const state = useGameState("playing");
+  const action = useGameAction();
+  const keyboardRows = [
+    LETTERS.slice(0, LETTERS.length / 2),
+    LETTERS.slice(LETTERS.length / 2),
+  ];
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+
+    const data: { letter?: string; action?: "pass" | "restart" } =
+      Object.fromEntries(
+        new FormData(
+          e.target as HTMLFormElement,
+          // @ts-ignore
+          e.nativeEvent.submitter
+        ).entries()
+      );
+
+    if (data.letter) {
+      action({
+        type: "guessLetter",
+        letter: data.letter,
+      });
+    } else if (data.action === "pass") {
+      action({
+        type: "pass",
+      });
+    } else if (data.action === "restart") {
+      action({
+        type: "restart",
+      });
+    }
+  }
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      className="bg-white w-full p-3 flex gap-3 items-center justify-between"
+    >
+      <button
+        className="uppercase text-sm px-2 h-16 rounded-full bg-primary text-white font-bold"
+        type="submit"
+        name="action"
+        value="pass"
+      >
+        Passar
+      </button>
+      <div className="flex flex-col gap-1">
+        {keyboardRows.map((row, i) => (
+          <div key={i} className="flex gap-1">
+            {row.map((letter) => {
+              const letterState = !state.round.lettersGuessed[letter]
+                ? "idle"
+                : state.round.word.includes(letter)
+                ? "correct"
+                : "wrong";
+
+              return (
+                <button
+                  key={letter}
+                  className={cn(
+                    "text-lg md:text-4xl uppercase w-8 h-8 md:w-14 md:h-14 flex items-center justify-center font-black hover:bg-neutral-200 rounded-md",
+                    letterState === "correct" && "bg-green-200 text-green-800",
+                    letterState === "wrong" && "bg-red-200 text-red-800",
+                    letterState === "idle"
+                      ? "pointer-events-auto"
+                      : "pointer-events-none"
+                  )}
+                  type="submit"
+                  name="letter"
+                  value={letter}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <button
+        className="uppercase text-sm px-2 h-16 rounded-full bg-primary text-white font-bold"
+        type="submit"
+        name="action"
+        value="restart"
+      >
+        Restart
+      </button>
+    </form>
   );
 }
