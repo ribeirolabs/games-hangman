@@ -3,12 +3,12 @@ import startAudio from "./assets/start.mp3";
 import lostAudio from "./assets/lost.mp3";
 import wrongAudio from "./assets/wrong.mp3";
 import winnerAudio from "./assets/winner.mp3";
-import { GameProvider, ScreenType, SOUNDS, State } from "./core";
+import { GameProvider, SOUNDS, State } from "./core";
 import { CreateGame } from "./steps/CreateGame";
 import { SelectScreenType } from "./steps/SelectScreenType";
 import { SelectWord } from "./steps/SelectWord";
 import { PlayGame } from "./steps/PlayGame";
-import { useContext, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 function App() {
   return (

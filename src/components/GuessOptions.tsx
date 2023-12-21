@@ -112,8 +112,8 @@ export function GuessOptions() {
                   )}
                 >
                   <span>Chutar {LABEL[mode]}</span>
-                  <span className="text-sm absolute left-0 bottom-1 w-full text-center">
-                    +{availablePoints[mode]}
+                  <span className="text-xs absolute left-0 bottom-1 w-full text-center">
+                    valendo {availablePoints[mode]} pontos
                   </span>
                 </button>
 
@@ -125,7 +125,7 @@ export function GuessOptions() {
           </div>
 
           {state.round.guessMode === "word" && (
-            <form onSubmit={onSubmit}>
+            <form onSubmit={onSubmit} className="hidden">
               <label className="input-label col-start-1 row-start-1">
                 <span>Palavra</span>
                 <input

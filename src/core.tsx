@@ -103,6 +103,7 @@ export type State =
       round: {
         guessMode: GuessMode;
         guessModeOptions: GuessMode[];
+        wordGuess: string[];
         word: string;
         lettersGuessed: Record<string, boolean>;
         wordsGuessed: Record<string, boolean>;
@@ -323,6 +324,7 @@ export function reducer(state: State, action: Action): State {
       round: {
         ...state.round,
         guessMode: "letter",
+        wordGuess: [],
         guessModeOptions:
           state.game.maxWordGuesses > 0 ? ["letter", "word"] : ["letter"],
         lettersGuessed: {},
@@ -337,18 +339,20 @@ export function reducer(state: State, action: Action): State {
     };
   }
 
-  if (action.type === "guessLetter" && state.step === "playing") {
+  if (
+    action.type === "guessLetter" &&
+    state.step === "playing" &&
+    state.round.guessMode === "letter"
+  ) {
     const result = produce(state, (draft) => {
       const letter = action.letter.toUpperCase();
 
       if (state.round.lettersGuessed[letter]) {
-        console.log("letter guessed");
         playSound("wrong");
         return;
       }
 
       if (state.round.playerGuesses[state.round.turn].letters <= 0) {
-        console.log("no more letter guesses");
         playSound("wrong");
         return;
       }
@@ -396,6 +400,20 @@ export function reducer(state: State, action: Action): State {
 
     return produce(result, (draft) => {
       setAvailableModes(draft);
+    });
+  }
+
+  if (
+    action.type === "guessLetter" &&
+    state.step === "playing" &&
+    state.round.guessMode === "word"
+  ) {
+    const nextEmpty = state.round.wordGuess.findIndex((value) => value === "");
+
+    return produce(state, (draft) => {
+      if (nextEmpty > -1) {
+        draft.round.wordGuess[nextEmpty] = action.letter;
+      }
     });
   }
 
@@ -475,6 +493,20 @@ export function reducer(state: State, action: Action): State {
   if (action.type === "setGuessMode" && state.step === "playing") {
     return produce(state, (draft) => {
       draft.round.guessMode = action.mode;
+
+      if (action.mode === "word") {
+        const guess = Array.from({ length: draft.round.word.length }, () => "");
+
+        for (let i in guess) {
+          const letter = state.round.word[i];
+
+          if (state.round.lettersGuessed[letter]) {
+            guess[i] = letter;
+          }
+        }
+
+        draft.round.wordGuess = guess;
+      }
     });
   }
 
@@ -596,6 +628,16 @@ export function GameProvider({
     return () => channel.removeEventListener("message", listener);
   }, [channel, send]);
 
+  useEffect(() => {
+    if (state.step === "playing" && state.round.guessMode === "word") {
+      const guessLength = state.round.wordGuess.filter(Boolean).length;
+
+      if (guessLength === state.round.word.length) {
+        send({ type: "guessWord", word: state.round.wordGuess.join("") });
+      }
+    }
+  }, [state]);
+
   return (
     <StateProvider state={state}>
       <ActionProvider send={sendWithBroadcast}>
@@ -621,7 +663,7 @@ export function useGameAction() {
 
 export const SOUNDS = ["correct", "start", "lost", "wrong", "winner"] as const;
 
-export type GameSound = typeof SOUNDS[number];
+export type GameSound = (typeof SOUNDS)[number];
 
 export function getGuessWordBonus(state: PlayingState) {
   return Object.keys(state.round.lettersGuessed).length === 0 ? 2 : 1;
