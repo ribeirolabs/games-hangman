@@ -150,6 +150,9 @@ type Action =
       type: "skip";
     }
   | {
+      type: "undo";
+    }
+  | {
       type: "restart";
     }
   | {
@@ -305,7 +308,15 @@ function checkRoundOver(draft: Draft<PlayingState>) {
   return false;
 }
 
+let lastUndoableState: PlayingState | null = null;
+const UNDOABLE_ACTIONS: Action["type"][] = ["guessLetter"];
+
 export function reducer(state: State, action: Action): State {
+  if (action.type === "undo" && lastUndoableState) {
+    const next = lastUndoableState;
+    return next;
+  }
+
   if (action.type === "createGame" && state.step === "creatingGame") {
     return {
       step: "selectingWord",
@@ -425,10 +436,14 @@ export function reducer(state: State, action: Action): State {
       setNextPlayer(draft);
     });
 
-    return produce(result, (draft) => {
+    const next = produce(result, (draft) => {
       setAvailableModes(draft);
       setAvailablePoints(draft);
     });
+
+    lastUndoableState = state;
+
+    return next;
   }
 
   if (
@@ -465,7 +480,7 @@ export function reducer(state: State, action: Action): State {
   ) {
     const nextEmpty = state.round.wordGuess.findIndex((value) => value === "");
 
-    return produce(state, (draft) => {
+    const next = produce(state, (draft) => {
       if (nextEmpty > -1) {
         draft.round.wordGuess[nextEmpty] = action.letter;
         playSound("select");
@@ -474,6 +489,16 @@ export function reducer(state: State, action: Action): State {
       setAvailableModes(draft);
       setAvailablePoints(draft);
     });
+
+    lastUndoableState = structuredClone(state) as PlayingState;
+    lastUndoableState.round.wordGuess = Array.from(
+      {
+        length: state.round.word.length,
+      },
+      () => ""
+    );
+
+    return next;
   }
 
   if (action.type === "guessWord" && state.step === "playing") {
@@ -586,10 +611,14 @@ export function reducer(state: State, action: Action): State {
   }
 
   if (action.type === "skip" && state.step === "playing") {
-    return produce(state, (draft) => {
+    const next = produce(state, (draft) => {
       playSound("skip");
       setNextPlayer(draft);
     });
+
+    lastUndoableState = state;
+
+    return next;
   }
 
   if (action.type === "restart" && state.step === "playing") {

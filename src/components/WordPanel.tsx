@@ -12,7 +12,7 @@ export function WordPanel() {
     .map((letter, i) => (letter === " " ? i : false))
     .filter((value) => value !== false) as number[];
 
-  const firstEmptyLetter = round.wordGuess.findIndex((value) => value === "");
+  const firstEmptyLetter = round.wordGuess.findIndex((value) => !value);
 
   function toggle() {
     setShow((value) => !value);

@@ -3,6 +3,7 @@ import { useGameAction } from "../core";
 import { ContractIcon } from "../icons/ContractIcon";
 import { ExpandIcon } from "../icons/ExpandIcon";
 import { ResetIcon } from "../icons/ResetIcon";
+import { UndoIcon } from "../icons/UndoIcon";
 
 export function Toolbar() {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -42,6 +43,12 @@ export function Toolbar() {
         label="Recomeçar"
         onClick={reset}
         icon={<ResetIcon className="w-4" />}
+      />
+
+      <ToolbarAction
+        label="Desfazer"
+        onClick={() => send({ type: "undo" })}
+        icon={<UndoIcon className="w-4" />}
       />
     </div>
   );
