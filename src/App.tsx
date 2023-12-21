@@ -13,18 +13,20 @@ import { SelectScreenType } from "./steps/SelectScreenType";
 import { SelectWord } from "./steps/SelectWord";
 import { PlayGame } from "./steps/PlayGame";
 import { useContext, useEffect, useRef } from "react";
+import { Toolbar } from "./components/Toolbar";
 
 function App() {
   return (
     <GameProvider>
       {(state) => (
-        <>
+        <div className="h-screen grid grid-rows-[2rem,1fr]">
+          <Toolbar />
           {state.step === "selectingScreenType" && <SelectScreenType />}
           {state.step === "creatingGame" && <CreateGame />}
           {state.step === "selectingWord" && <SelectWord />}
           {state.step === "playing" && <PlayGame />}
           <AudioEffect />
-        </>
+        </div>
       )}
     </GameProvider>
   );

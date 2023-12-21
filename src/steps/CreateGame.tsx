@@ -39,7 +39,7 @@ export function CreateGame() {
   }
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center">
+    <div className="w-full h-full flex items-center justify-center">
       <form
         className="form p-4 bg-white border-4 border-neutral-200 rounded-lg"
         onSubmit={onSubmit}

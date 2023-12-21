@@ -10,7 +10,7 @@ export function PlayGame() {
   const { round } = useGameState("playing");
 
   return (
-    <div className="flex justify-between flex-col h-screen overflow-hidden">
+    <div className="flex h-full justify-between flex-col overflow-hidden">
       <Players />
 
       <div className="flex flex-col gap-4 justify-center items-center flex-1">

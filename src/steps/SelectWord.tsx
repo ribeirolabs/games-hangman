@@ -34,14 +34,14 @@ export function SelectWord() {
 
   if (type === "presentation") {
     return (
-      <div className="w-screen h-screen flex items-center justify-center">
+      <div className="w-screen flex items-center justify-center">
         <h1>Aguardando {host.name} escolher palavra...</h1>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen items-center justify-center">
+    <div className="flex h-full flex-col items-center justify-center">
       <form
         className="bg-white p-4 shadow-outline rounded-lg mx-auto w-fit flex flex-col gap-4"
         onSubmit={onSubmit}
