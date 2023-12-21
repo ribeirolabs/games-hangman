@@ -38,11 +38,14 @@ export function getPlayer(players: Player[], id: string) {
   return player;
 }
 
-export function cn(...classes: (string | boolean | null)[]): string {
+export function cn(
+  ...classes: (string | boolean | null | undefined)[]
+): string {
   return classes.filter(Boolean).join(" ");
 }
 
-export function playSound(id: GameSound) {
+export function playSound(id: GameSound, reason?: string) {
+  console.log("playing", id, reason);
   window.dispatchEvent(
     new CustomEvent("play-sound", {
       detail: {

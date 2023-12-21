@@ -1,7 +1,7 @@
 import { useState, FormEvent } from "react";
 import removeAccents from "remove-accents";
 import { useGameState, useGameAction, selectWordSchema } from "../core";
-import { getPlayer, ValidationErrors, validate, cn } from "../utils";
+import { getPlayer, ValidationErrors, validate, cn, playSound } from "../utils";
 
 export function SelectWord() {
   const {
@@ -33,7 +33,11 @@ export function SelectWord() {
   }
 
   if (type === "presentation") {
-    return <h1>Aguardando {host.name} escolher palavra...</h1>;
+    return (
+      <div className="w-screen h-screen flex items-center justify-center">
+        <h1>Aguardando {host.name} escolher palavra...</h1>
+      </div>
+    );
   }
 
   return (
@@ -49,13 +53,20 @@ export function SelectWord() {
               type="text"
               name="word"
               value={value}
-              onChange={(e) =>
+              onChange={(e) => {
+                const event = e.nativeEvent as InputEvent;
+
+                playSound(
+                  event.inputType === "deleteContentBackward"
+                    ? "erase"
+                    : "select"
+                );
                 setValue(
                   removeAccents(
                     e.target.value.toUpperCase().replace(/\d+/g, "")
                   )
-                )
-              }
+                );
+              }}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               autoFocus

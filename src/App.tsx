@@ -1,14 +1,18 @@
-import correctAudio from "./assets/correct.mp3";
+import correctAudio from "./assets/correct-3.mp3";
 import startAudio from "./assets/start.mp3";
 import lostAudio from "./assets/lost.mp3";
 import wrongAudio from "./assets/wrong.mp3";
-import winnerAudio from "./assets/winner.mp3";
-import { GameProvider, SOUNDS, State } from "./core";
+import winnerAudio from "./assets/correct.mp3";
+import selectAudio from "./assets/select.mp3";
+import eraseAudio from "./assets/erase.mp3";
+import skipAudio from "./assets/skip.mp3";
+
+import { GameProvider, GameStateContext, SOUNDS } from "./core";
 import { CreateGame } from "./steps/CreateGame";
 import { SelectScreenType } from "./steps/SelectScreenType";
 import { SelectWord } from "./steps/SelectWord";
 import { PlayGame } from "./steps/PlayGame";
-import { useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 
 function App() {
   return (
@@ -26,9 +30,8 @@ function App() {
   );
 }
 
-function StoreGame({ state }: { state: State }) {}
-
 function AudioEffect() {
+  const state = useContext(GameStateContext);
   const connected = useRef<Record<string, HTMLAudioElement>>({});
   const audioContext = useRef(new AudioContext());
   const timeout = useRef<number | null>(null);
@@ -44,6 +47,16 @@ function AudioEffect() {
       track.connect(audioContext.current.destination);
       connected.current[id] = audio;
     });
+  }, []);
+
+  useEffect(() => {
+    if (state.step === "selectingScreenType") {
+      return;
+    }
+
+    if (state.type === "presentation") {
+      return;
+    }
 
     function listener(e: CustomEvent<{ id: string }>) {
       const audio = connected.current[e.detail.id];
@@ -68,7 +81,7 @@ function AudioEffect() {
 
     // @ts-ignore
     return () => window.removeEventListener("play-sound", listener);
-  }, []);
+  }, [state]);
 
   return (
     <>
@@ -77,6 +90,9 @@ function AudioEffect() {
       <audio id="lost" src={lostAudio}></audio>
       <audio id="wrong" src={wrongAudio}></audio>
       <audio id="winner" src={winnerAudio}></audio>
+      <audio id="select" src={selectAudio}></audio>
+      <audio id="erase" src={eraseAudio}></audio>
+      <audio id="skip" src={skipAudio}></audio>
     </>
   );
 }

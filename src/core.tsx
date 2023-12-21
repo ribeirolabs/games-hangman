@@ -100,27 +100,30 @@ export type State =
       step: "playing";
       type: ScreenType;
       game: Game;
-      round: {
-        guessMode: GuessMode;
-        guessModeOptions: GuessMode[];
-        wordGuess: string[];
-        word: string;
-        lettersGuessed: Record<string, boolean>;
-        wordsGuessed: Record<string, boolean>;
-        hint: string;
-        host: string;
-        turn: string;
-        points: Record<string, number>;
-        winner: string | null;
-        playerGuesses: Record<
-          string,
-          {
-            words: number;
-            letters: number;
-          }
-        >;
-      };
+      round: Round;
     };
+
+type Round = {
+  guessMode: GuessMode;
+  guessModeOptions: GuessMode[];
+  wordGuess: string[];
+  word: string;
+  availablePoints: Record<GuessMode, number>;
+  lettersGuessed: Record<string, boolean>;
+  wordsGuessed: Record<string, boolean>;
+  hint: string;
+  host: string;
+  turn: string;
+  points: Record<string, number>;
+  winner: string | null;
+  playerGuesses: Record<
+    string,
+    {
+      words: number;
+      letters: number;
+    }
+  >;
+};
 
 type Action =
   | {
@@ -141,7 +144,10 @@ type Action =
       letter: string;
     }
   | {
-      type: "pass";
+      type: "backspace";
+    }
+  | {
+      type: "skip";
     }
   | {
       type: "restart";
@@ -245,7 +251,9 @@ function setWinner(draft: Draft<PlayingState>, id: string) {
   draft.round.winner = id;
 }
 
-function getRemainingLetters(state: PlayingState) {
+function getRemainingLetters(state: {
+  round: Pick<Round, "word" | "lettersGuessed">;
+}) {
   return state.round.word
     .split("")
     .filter((letter) => !state.round.lettersGuessed[letter] && letter !== " ")
@@ -263,6 +271,15 @@ function setAvailableModes(draft: Draft<PlayingState>) {
     draft.round.guessMode = "word";
     draft.round.guessModeOptions = ["word"];
   }
+}
+
+function setAvailablePoints(draft: {
+  round: Pick<Round, "word" | "lettersGuessed" | "availablePoints">;
+}) {
+  draft.round.availablePoints = {
+    letter: 1,
+    word: getGuessWordPoints(draft),
+  };
 }
 
 function checkRoundOver(draft: Draft<PlayingState>) {
@@ -318,25 +335,35 @@ export function reducer(state: State, action: Action): State {
 
     playSound("start");
 
-    return {
+    const word = action.word.toUpperCase();
+
+    const next: PlayingState = {
       ...state,
       step: "playing",
       round: {
         ...state.round,
         guessMode: "letter",
         wordGuess: [],
+        availablePoints: {
+          letter: 0,
+          word: 0,
+        },
         guessModeOptions:
           state.game.maxWordGuesses > 0 ? ["letter", "word"] : ["letter"],
         lettersGuessed: {},
         wordsGuessed: {},
         playerGuesses: resetGuesses(state.game),
-        word: action.word.toUpperCase(),
+        word,
         hint: action.hint.toUpperCase(),
         turn: nextPlayer.id,
         points: resetPoints(state.game.players),
         winner: null,
       },
     };
+
+    return produce(next, (draft) => {
+      setAvailablePoints(draft);
+    });
   }
 
   if (
@@ -348,12 +375,12 @@ export function reducer(state: State, action: Action): State {
       const letter = action.letter.toUpperCase();
 
       if (state.round.lettersGuessed[letter]) {
-        playSound("wrong");
+        playSound("wrong", "[letterGuess] letter already guessed");
         return;
       }
 
       if (state.round.playerGuesses[state.round.turn].letters <= 0) {
-        playSound("wrong");
+        playSound("wrong", "[letterGuess] no more letter guesses");
         return;
       }
 
@@ -388,7 +415,7 @@ export function reducer(state: State, action: Action): State {
       if (guesses.letters === 0 && guesses.words === 0) {
         playSound("lost");
       } else {
-        playSound("wrong");
+        playSound("wrong", "[letterGuess] no more guesses");
       }
 
       if (checkRoundOver(draft)) {
@@ -400,6 +427,34 @@ export function reducer(state: State, action: Action): State {
 
     return produce(result, (draft) => {
       setAvailableModes(draft);
+      setAvailablePoints(draft);
+    });
+  }
+
+  if (
+    action.type === "backspace" &&
+    state.step === "playing" &&
+    state.round.guessMode === "word"
+  ) {
+    return produce(state, (draft) => {
+      const nextEmpty = draft.round.wordGuess.findIndex(
+        (value) => value === ""
+      );
+
+      let index = nextEmpty;
+
+      do {
+        index = Math.max(0, index - 1);
+
+        const letter = draft.round.wordGuess[index];
+
+        if (!draft.round.lettersGuessed[letter]) {
+          break;
+        }
+      } while (index > -1);
+
+      draft.round.wordGuess[Math.max(index, 0)] = "";
+      playSound("erase");
     });
   }
 
@@ -413,7 +468,11 @@ export function reducer(state: State, action: Action): State {
     return produce(state, (draft) => {
       if (nextEmpty > -1) {
         draft.round.wordGuess[nextEmpty] = action.letter;
+        playSound("select");
       }
+
+      setAvailableModes(draft);
+      setAvailablePoints(draft);
     });
   }
 
@@ -423,7 +482,7 @@ export function reducer(state: State, action: Action): State {
 
     const result = produce(state, (draft) => {
       if (draft.round.wordsGuessed[word]) {
-        playSound("wrong");
+        playSound("wrong", "[wordGuess] word already guessed");
         return;
       }
 
@@ -450,17 +509,18 @@ export function reducer(state: State, action: Action): State {
         if (guesses.letters === 0 && guesses.words === 0) {
           playSound("lost");
         } else {
-          playSound("wrong");
+          playSound("wrong", "[wordGuess] no more guesses");
         }
       }
     });
 
     return produce(result, (draft) => {
-      const bonus = getGuessWordBonus(draft);
-      if (word === draft.round.word) {
-        draft.round.points[draft.round.turn] += remainingLetters * bonus;
+      const points = getGuessWordPoints(draft);
 
-        if (bonus > 1) {
+      if (word === draft.round.word) {
+        draft.round.points[draft.round.turn] += points;
+
+        if (points > 1) {
           draft.round.points[draft.round.host] -= remainingLetters;
         }
 
@@ -468,6 +528,7 @@ export function reducer(state: State, action: Action): State {
           if (letter === " ") {
             continue;
           }
+
           draft.round.lettersGuessed[letter] = true;
         }
 
@@ -487,6 +548,7 @@ export function reducer(state: State, action: Action): State {
 
       draft.round.turn = next.id;
       setAvailableModes(draft);
+      setAvailablePoints(draft);
     });
   }
 
@@ -523,8 +585,9 @@ export function reducer(state: State, action: Action): State {
     });
   }
 
-  if (action.type === "pass" && state.step === "playing") {
+  if (action.type === "skip" && state.step === "playing") {
     return produce(state, (draft) => {
+      playSound("skip");
       setNextPlayer(draft);
     });
   }
@@ -539,7 +602,9 @@ export function reducer(state: State, action: Action): State {
   return state;
 }
 
-const StateContext = createContext<State>({ step: "selectingScreenType" });
+export const GameStateContext = createContext<State>({
+  step: "selectingScreenType",
+});
 const ActionContext = createContext<Dispatch<Action>>(() => {});
 
 function StateProvider({
@@ -547,7 +612,9 @@ function StateProvider({
   children,
 }: PropsWithChildren<{ state: State }>) {
   return (
-    <StateContext.Provider value={state}>{children}</StateContext.Provider>
+    <GameStateContext.Provider value={state}>
+      {children}
+    </GameStateContext.Provider>
   );
 }
 
@@ -561,7 +628,7 @@ function ActionProvider({
 }
 
 function getStorageKey(type: ScreenType) {
-  return `game-${type}`;
+  return `game-${type ?? "game"}`;
 }
 
 export function GameProvider({
@@ -569,9 +636,9 @@ export function GameProvider({
 }: {
   children: (state: State) => JSX.Element;
 }) {
-  const screenType = (new URLSearchParams(window.location.search).get(
+  const screenType = new URLSearchParams(window.location.search).get(
     "screen_type"
-  ) ?? "game") as ScreenType;
+  ) as ScreenType;
 
   const [state, send] = useReducer(reducer, screenType, (screenType) => {
     try {
@@ -581,7 +648,16 @@ export function GameProvider({
         throw new Error("No local game");
       }
 
-      return JSON.parse(local);
+      const game = JSON.parse(local);
+
+      if (game.step === "selectingScreenType" && screenType) {
+        return {
+          step: "creatingGame",
+          type: screenType,
+        };
+      }
+
+      return game;
     } catch (e: any) {
       return screenType
         ? {
@@ -632,7 +708,10 @@ export function GameProvider({
     if (state.step === "playing" && state.round.guessMode === "word") {
       const guessLength = state.round.wordGuess.filter(Boolean).length;
 
-      if (guessLength === state.round.word.length) {
+      if (
+        guessLength === state.round.word.length &&
+        state.round.winner == null
+      ) {
         send({ type: "guessWord", word: state.round.wordGuess.join("") });
       }
     }
@@ -648,7 +727,7 @@ export function GameProvider({
 }
 
 export function useGameState<S extends State["step"]>(step: S) {
-  const state = useContext(StateContext);
+  const state = useContext(GameStateContext);
 
   if (state.step === step) {
     return state as Extract<State, { step: S }>;
@@ -661,10 +740,28 @@ export function useGameAction() {
   return useContext(ActionContext);
 }
 
-export const SOUNDS = ["correct", "start", "lost", "wrong", "winner"] as const;
+export const SOUNDS = [
+  "correct",
+  "start",
+  "lost",
+  "wrong",
+  "winner",
+  "select",
+  "erase",
+  "skip",
+] as const;
 
 export type GameSound = (typeof SOUNDS)[number];
 
-export function getGuessWordBonus(state: PlayingState) {
-  return Object.keys(state.round.lettersGuessed).length === 0 ? 2 : 1;
+export function getGuessWordPoints(state: {
+  round: Pick<Round, "word" | "lettersGuessed">;
+}) {
+  const remaining = getRemainingLetters({
+    round: {
+      word: state.round.word,
+      lettersGuessed: state.round.lettersGuessed,
+    },
+  });
+
+  return remaining > state.round.word.length / 2 ? remaining * 2 : remaining;
 }

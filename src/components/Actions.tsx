@@ -1,11 +1,15 @@
 import { FormEvent } from "react";
 import { useGameState, useGameAction } from "../core";
+import { BackspaceIcon } from "../icons/BackspaceIcon";
+import { GuessWordIcon } from "../icons/GuessWordIcon";
+import { SkipIcon } from "../icons/SkipIcon";
 import { cn } from "../utils";
+import { ActionButton } from "./ActionButton";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 export function Actions() {
-  const state = useGameState("playing");
+  const { round } = useGameState("playing");
   const action = useGameAction();
   const keyboardRows = [
     LETTERS.slice(0, LETTERS.length / 2),
@@ -15,7 +19,11 @@ export function Actions() {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
 
-    const data: { letter?: string; action?: "pass" | "restart" } =
+    if (round.winner) {
+      return;
+    }
+
+    const data: { letter?: string; action?: "skip" | "guessWord" } =
       Object.fromEntries(
         new FormData(
           e.target as HTMLFormElement,
@@ -29,13 +37,18 @@ export function Actions() {
         type: "guessLetter",
         letter: data.letter,
       });
-    } else if (data.action === "pass") {
+    } else if (data.action === "skip") {
       action({
-        type: "pass",
+        type: "skip",
       });
-    } else if (data.action === "restart") {
+    } else if (data.action === "guessWord") {
       action({
-        type: "restart",
+        type: "setGuessMode",
+        mode: round.guessMode === "letter" ? "word" : "letter",
+      });
+    } else if (data.action === "backspace") {
+      action({
+        type: "backspace",
       });
     }
   }
@@ -43,23 +56,30 @@ export function Actions() {
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white w-full p-3 flex gap-3 items-center justify-between"
+      className={cn(
+        "bg-white w-full p-3 grid grid-cols-[1fr,4fr,1fr] gap-3 items-center justify-between",
+        round.winner && "pointer-events-none"
+      )}
     >
-      <button
-        className="uppercase text-sm px-2 h-16 rounded-full bg-primary text-white font-bold"
-        type="submit"
-        name="action"
-        value="pass"
-      >
-        Passar
-      </button>
-      <div className="flex flex-col gap-1">
+      <div className="flex justify-center">
+        {round.guessMode === "letter" ? (
+          <ActionButton type="submit" name="action" value="skip">
+            <SkipIcon className="w-14" />
+          </ActionButton>
+        ) : (
+          <ActionButton type="submit" name="action" value="backspace">
+            <BackspaceIcon className="w-14" />
+          </ActionButton>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1 items-center">
         {keyboardRows.map((row, i) => (
           <div key={i} className="flex gap-1">
             {row.map((letter) => {
-              const letterState = !state.round.lettersGuessed[letter]
+              const letterState = !round.lettersGuessed[letter]
                 ? "idle"
-                : state.round.word.includes(letter)
+                : round.word.includes(letter)
                 ? "correct"
                 : "wrong";
 
@@ -85,14 +105,16 @@ export function Actions() {
           </div>
         ))}
       </div>
-      <button
-        className="uppercase text-sm px-2 h-16 rounded-full bg-primary text-white font-bold"
-        type="submit"
-        name="action"
-        value="restart"
-      >
-        Restart
-      </button>
+
+      <div className="flex justify-center">
+        <ActionButton type="submit" name="action" value="guessWord">
+          {round.guessMode === "letter" ? (
+            <GuessWordIcon className="w-14" />
+          ) : (
+            <span className="text-6xl font-serif">W</span>
+          )}
+        </ActionButton>
+      </div>
     </form>
   );
 }

@@ -3,10 +3,14 @@ import { WrongGuesses } from "../components/WrongGuesses";
 import { GuessOptions } from "../components/GuessOptions";
 import { Players } from "../components/Players";
 import { WordPanel } from "../components/WordPanel";
+import { useGameState } from "../core";
+import { cn } from "../utils";
 
 export function PlayGame() {
+  const { round } = useGameState("playing");
+
   return (
-    <div className="flex justify-between flex-col h-screen">
+    <div className="flex justify-between flex-col h-screen overflow-hidden">
       <Players />
 
       <div className="flex flex-col gap-4 justify-center items-center flex-1">
@@ -15,7 +19,12 @@ export function PlayGame() {
         <GuessOptions />
       </div>
 
-      <div>
+      <div
+        className={cn(
+          "transition-transform",
+          round.winner && "translate-y-[100%] pointer-events-none"
+        )}
+      >
         <WrongGuesses />
         <Actions />
       </div>

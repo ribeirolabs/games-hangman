@@ -25,6 +25,7 @@ export function WordPanel() {
           const isLetterGuessed = round.lettersGuessed[letter];
           const isSpace = letter === " ";
           const isGuessingWord = round.guessMode === "word";
+          const isFirstEmpty = firstEmptyLetter === i;
           const winner =
             round.winner == null
               ? null
@@ -54,10 +55,10 @@ export function WordPanel() {
                   : show && !isGuessingWord
                   ? "text-gray-400"
                   : "bg-gray-300 border-4 border-gray-400",
-                isGuessingWord &&
-                  !isLetterGuessed &&
-                  "border-info-500 bg-info-100",
-                firstEmptyLetter === i && "animate-bounce"
+                isGuessingWord && !isLetterGuessed && isFirstEmpty
+                  ? "border-info-500 bg-info-100"
+                  : null,
+                isFirstEmpty && isGuessingWord ? "animate-bounce" : null
               )}
               key={`${letter}-${i}`}
             >
