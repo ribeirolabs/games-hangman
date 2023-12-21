@@ -14,6 +14,10 @@ export function WordPanel() {
 
   const firstEmptyLetter = round.wordGuess.findIndex((value) => value === "");
 
+  function toggle() {
+    setShow((value) => !value);
+  }
+
   return (
     <div className="flex flex-col gap-4 bg-white rounded-md shadow-[0px_0px_0px_6px_rgba(0_0_0/25%)] p-3">
       <h2 className="text-center text-2xl font-black uppercase">
@@ -89,12 +93,12 @@ export function WordPanel() {
 
       {type === "game" && round.winner == null ? (
         <div className="text-center">
-          <button
-            className="btn"
-            onMouseEnter={() => setShow(true)}
-            onMouseLeave={() => setShow(false)}
-          >
-            {show ? <span>Esconder palavra</span> : <span>Mostra palavra</span>}
+          <button className="btn" onClick={toggle}>
+            {show ? (
+              <span>Esconder palavra</span>
+            ) : (
+              <span>Mostrar palavra</span>
+            )}
           </button>
         </div>
       ) : null}
