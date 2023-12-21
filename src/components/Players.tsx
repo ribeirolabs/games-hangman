@@ -46,10 +46,10 @@ export function Players() {
     );
 
   return (
-    <header className="p-3 flex w-full justify-between bg-neutral-900">
+    <header className="p-3 flex w-full justify-between">
       <PlayerCard player={host} />
 
-      <div className="flex gap-3">
+      <div className="flex gap-1">
         {players.map((player) => (
           <PlayerCard key={player.id} player={player} />
         ))}
@@ -73,65 +73,42 @@ function PlayerCard({ player }: { player: PlayerWithState }) {
     <div
       key={player.id}
       className={cn(
-        "flex min-w-[200px] flex-col text-white rounded-lg overflow-hidden relative",
+        "flex min-w-[10em] flex-col rounded-lg overflow-hidden relative border-inside p-2 gap-2 text-white/90",
         isWinner
-          ? "bg-green-700 text-black/70 animate-bounce"
-          : isHost && round.winner && !isWinner
-          ? "bg-red-900"
-          : isHost
-          ? "bg-info-700"
+          ? "bg-green-700 animate-bounce"
           : isTurn
-          ? "animate--pulse bg-green-600"
+          ? "bg-primary"
           : isOut
-          ? "opacity-50"
+          ? "bg-neutral-800 opacity-50"
           : "bg-neutral-800"
       )}
     >
-      <div className="flex justify-between p-2 px-4">
-        <div
-          className={cn(
-            "flex items-center justify-center gap-2 text-3xl uppercase font-bold flex-grow-0 tracking-wider"
-          )}
-        >
+      <div className="flex gap-2">
+        <div className="flex items-center text-xl uppercase font-black tracking-wider flex-1 bg-white/20 rounded px-1">
           <span>{player.name}</span>
         </div>
 
-        <div className="flex items-center">
-          {isHost && round.winner == null && <PencilIcon />}
-          {isTurn && (
-            <div className="animate-bounce">
-              <ChatIcon />
-            </div>
-          )}
-          {isWinner && <TrophyIcon />}
-          {isOut && <BlockIcon />}
-        </div>
-
-        <div className="text-3xl font-extrabold">
+        <div className="text-2xl font-extrabold bg-white/20 px-1 rounded min-w-[2.5ch] text-center">
           {game.playerPoints[player.id]}
         </div>
       </div>
 
-      <div
-        className={cn(
-          "flex-1 flex justify-between font-bold p-2 bg-neutral-800/30 uppercase",
-          isOut && "bg-transparent"
-        )}
-      >
+      <div className="flex-1 flex justify-between font-bold uppercase gap-1">
         {isHost ? null : (
           <div className="flex justify-around flex-[2]">
             <div className="flex-1 text-center">
-              <div className="text-[10px]">Letras</div>
+              <div className="text-[.6em]">Letras</div>
               <div className="text-2xl">{letterGuesses}</div>
             </div>
             <div className="flex-1 text-center">
-              <div className="text-[10px]">Chutes</div>
+              <div className="text-[.6em]">Chutes</div>
               <div className="text-2xl">{wordGuesses}</div>
             </div>
           </div>
         )}
 
-        <div className="h-full flex items-center justify-end flex-1">
+        <div className="h-full text-center flex-1">
+          <div className="text-[.6em]">Rodada</div>
           <div className="flex items-center justify-center">
             <div className="text-xl">
               {roundPoints === 0 ? "" : roundPoints > 0 ? "+" : "-"}
