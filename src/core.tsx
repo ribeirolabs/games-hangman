@@ -273,7 +273,17 @@ function setAvailableModes(draft: Draft<PlayingState>) {
   ) {
     draft.round.guessMode = "word";
     draft.round.guessModeOptions = ["word"];
+    draft.round.wordGuess = emptyWordGuess(draft.round.word.length);
   }
+}
+
+function emptyWordGuess(length: number): string[] {
+  return Array.from(
+    {
+      length,
+    },
+    () => ""
+  );
 }
 
 function setAvailablePoints(draft: {
@@ -491,12 +501,7 @@ export function reducer(state: State, action: Action): State {
     });
 
     lastUndoableState = structuredClone(state) as PlayingState;
-    lastUndoableState.round.wordGuess = Array.from(
-      {
-        length: state.round.word.length,
-      },
-      () => ""
-    );
+    lastUndoableState.round.wordGuess = emptyWordGuess(state.round.word.length);
 
     return next;
   }
@@ -582,7 +587,7 @@ export function reducer(state: State, action: Action): State {
       draft.round.guessMode = action.mode;
 
       if (action.mode === "word") {
-        const guess = Array.from({ length: draft.round.word.length }, () => "");
+        const guess = emptyWordGuess(draft.round.word.length);
 
         for (let i in guess) {
           const letter = state.round.word[i];
@@ -621,7 +626,7 @@ export function reducer(state: State, action: Action): State {
     return next;
   }
 
-  if (action.type === "restart" && state.step === "playing") {
+  if (action.type === "restart" && state.step !== "selectingScreenType") {
     return {
       step: "creatingGame",
       type: state.type,

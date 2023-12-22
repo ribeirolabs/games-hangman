@@ -23,14 +23,16 @@ export function Actions() {
       return;
     }
 
-    const data: { letter?: string; action?: "skip" | "guessWord" } =
-      Object.fromEntries(
-        new FormData(
-          e.target as HTMLFormElement,
-          // @ts-ignore
-          e.nativeEvent.submitter
-        ).entries()
-      );
+    const data: {
+      letter?: string;
+      action?: "skip" | "setGuessMode" | "backspace";
+    } = Object.fromEntries(
+      new FormData(
+        e.target as HTMLFormElement,
+        // @ts-ignore
+        e.nativeEvent.submitter
+      ).entries()
+    );
 
     if (data.letter) {
       action({
@@ -41,7 +43,7 @@ export function Actions() {
       action({
         type: "skip",
       });
-    } else if (data.action === "guessWord") {
+    } else if (data.action === "setGuessMode") {
       action({
         type: "setGuessMode",
         mode: round.guessMode === "letter" ? "word" : "letter",
@@ -107,7 +109,12 @@ export function Actions() {
       </div>
 
       <div className="flex justify-center">
-        <ActionButton type="submit" name="action" value="guessWord">
+        <ActionButton
+          type="submit"
+          name="action"
+          value="setGuessMode"
+          disabled={round.guessModeOptions.length < 2}
+        >
           {round.guessMode === "letter" ? (
             <GuessWordIcon className="w-14" />
           ) : (

@@ -65,7 +65,7 @@ function ToolbarAction({
 }) {
   return (
     <button
-      className="p-1 hover:bg-neutral-700 rounded flex gap-1 text-xs"
+      className="p-1 hover:bg-neutral-700 rounded flex gap-1 text-xs items-center"
       onClick={onClick}
     >
       {icon}

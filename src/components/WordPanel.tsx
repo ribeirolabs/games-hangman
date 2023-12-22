@@ -61,8 +61,7 @@ export function WordPanel() {
                   : "bg-gray-300 border-4 border-gray-400",
                 isGuessingWord && !isLetterGuessed && isFirstEmpty
                   ? "border-info-500 bg-info-100"
-                  : null,
-                isFirstEmpty && isGuessingWord ? "animate-bounce" : null
+                  : null
               )}
               key={`${letter}-${i}`}
             >
