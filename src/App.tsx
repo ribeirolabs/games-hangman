@@ -56,7 +56,7 @@ function AudioEffect() {
       return;
     }
 
-    if (state.type === "presentation") {
+    if (state.type === "game") {
       return;
     }
 

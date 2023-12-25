@@ -271,19 +271,27 @@ function setAvailableModes(draft: Draft<PlayingState>) {
     guesses.words > 0 &&
     draft.game.maxWordGuesses > 0
   ) {
+    if (draft.round.guessMode !== "word") {
+      draft.round.wordGuess = emptyWordGuess(draft.round);
+    }
+
     draft.round.guessMode = "word";
     draft.round.guessModeOptions = ["word"];
-    draft.round.wordGuess = emptyWordGuess(draft.round.word.length);
   }
 }
 
-function emptyWordGuess(length: number): string[] {
-  return Array.from(
-    {
-      length,
-    },
-    () => ""
-  );
+function emptyWordGuess(round: Round): string[] {
+  const guess = round.word.split("");
+
+  for (const i in guess) {
+    const letter = guess[i];
+
+    if (!round.lettersGuessed[letter]) {
+      guess[i] = "";
+    }
+  }
+
+  return guess;
 }
 
 function setAvailablePoints(draft: {
@@ -319,7 +327,6 @@ function checkRoundOver(draft: Draft<PlayingState>) {
 }
 
 let lastUndoableState: PlayingState | null = null;
-const UNDOABLE_ACTIONS: Action["type"][] = ["guessLetter"];
 
 export function reducer(state: State, action: Action): State {
   if (action.type === "undo" && lastUndoableState) {
@@ -501,7 +508,7 @@ export function reducer(state: State, action: Action): State {
     });
 
     lastUndoableState = structuredClone(state) as PlayingState;
-    lastUndoableState.round.wordGuess = emptyWordGuess(state.round.word.length);
+    lastUndoableState.round.wordGuess = emptyWordGuess(state.round);
 
     return next;
   }
@@ -587,7 +594,7 @@ export function reducer(state: State, action: Action): State {
       draft.round.guessMode = action.mode;
 
       if (action.mode === "word") {
-        const guess = emptyWordGuess(draft.round.word.length);
+        const guess = emptyWordGuess(draft.round);
 
         for (let i in guess) {
           const letter = state.round.word[i];
