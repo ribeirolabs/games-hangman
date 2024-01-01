@@ -53,10 +53,13 @@ export function GuessOptions() {
   }
 
   return (
-    <div className="flex w-fit uppercase font-extrabold text-lg items-center gap-4">
-      {state.round.guessMode === "letter"
-        ? `valendo ${state.round.availablePoints.letter} ponto por letra`
-        : `valendo ${state.round.availablePoints.word} pontos`}
+    <div className="flex flex-col w-fit uppercase text-lg items-center">
+      <div className={state.round.guessMode === "letter" ? "font-black" : ""}>
+        valendo {state.round.availablePoints.letter} ponto por acerto
+      </div>
+      <div className={state.round.guessMode === "word" ? "font-black" : ""}>
+        valendo {state.round.availablePoints.word} pontos por chute
+      </div>
     </div>
   );
 }
