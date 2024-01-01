@@ -485,7 +485,25 @@ export function reducer(state: State, action: Action): State {
         }
       } while (index > -1);
 
+      const letter = draft.round.wordGuess[Math.max(index, 0)];
+
+      const previousLetter = draft.round.wordGuess[index - 1];
+      if (
+        letter === "" &&
+        previousLetter === " " &&
+        draft.round.wordGuess[index - 2]
+      ) {
+        draft.round.wordGuess[index - 1] = "";
+        draft.round.wordGuess[index - 2] = "";
+      }
+
       draft.round.wordGuess[Math.max(index, 0)] = "";
+
+      if (letter === " " && draft.round.wordGuess[index - 1]) {
+        draft.round.wordGuess[index] = "";
+        draft.round.wordGuess[index - 1] = "";
+      }
+
       playSound("erase");
     });
   }
@@ -500,6 +518,12 @@ export function reducer(state: State, action: Action): State {
     const next = produce(state, (draft) => {
       if (nextEmpty > -1) {
         draft.round.wordGuess[nextEmpty] = action.letter;
+        const nextLetter = draft.round.word[nextEmpty + 1];
+
+        if (nextLetter === " ") {
+          draft.round.wordGuess[nextEmpty + 1] = " ";
+        }
+
         playSound("select");
       }
 
