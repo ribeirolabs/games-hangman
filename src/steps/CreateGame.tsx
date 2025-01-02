@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { useGameAction, gameSchema, useGameState } from "../core";
+import { useGameAction, gameSchema, useGameState, Game } from "../core";
 import { ValidationErrors, validate } from "../utils";
 
 export function CreateGame() {
@@ -14,6 +14,7 @@ export function CreateGame() {
     const data = new FormData(e.target as HTMLFormElement);
     const maxLetterGuesses = data.get("max_letter_guesses");
     const maxWordGuesses = data.get("max_word_guesses");
+    const time = data.get("time");
     const players = (data.get("players") as string)?.split(/\n/);
 
     const result = validate(
@@ -22,6 +23,7 @@ export function CreateGame() {
         maxLetterGuesses,
         maxWordGuesses,
         players,
+        time,
       },
       gameSchema
     );
@@ -62,6 +64,17 @@ export function CreateGame() {
             <div className="div input-helper">
               <span>&nbsp;</span>
               <span className="text-danger">{errors.maxWordGuesses[0]}</span>
+            </div>
+          )}
+        </label>
+
+        <label>
+          <span className="input-label">Tempo</span>
+          <input name="time" type="number" />
+          {errors && errors.time && (
+            <div className="div input-helper">
+              <span>&nbsp;</span>
+              <span className="text-danger">{errors.time[0]}</span>
             </div>
           )}
         </label>

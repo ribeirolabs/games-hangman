@@ -66,6 +66,19 @@ export const gameSchema = z.object({
       invalid_type_error: "Opção inválida",
     })
   ),
+  time: z.preprocess(
+    (input) => {
+      return typeof input === "string"
+        ? parseInt(input)
+        : typeof input === "number"
+        ? input
+        : NaN;
+    },
+    z.number({
+      required_error: "Opção obrigatória",
+      invalid_type_error: "Opção inválida",
+    })
+  ),
   players: playersSchema,
 });
 
@@ -104,6 +117,7 @@ export type State =
     };
 
 type Round = {
+  id: string;
   guessMode: GuessMode;
   guessModeOptions: GuessMode[];
   wordGuess: string[];
@@ -111,6 +125,7 @@ type Round = {
   availablePoints: Record<GuessMode, number>;
   lettersGuessed: Record<string, boolean>;
   wordsGuessed: Record<string, boolean>;
+  timer: number;
   hint: string;
   host: string;
   turn: string;
@@ -370,6 +385,8 @@ export function reducer(state: State, action: Action): State {
       step: "playing",
       round: {
         ...state.round,
+        id: roundId(),
+        timer: state.game.time,
         guessMode: "letter",
         wordGuess: [],
         availablePoints: {
@@ -394,12 +411,13 @@ export function reducer(state: State, action: Action): State {
     });
   }
 
+  // here
   if (
     action.type === "guessLetter" &&
     state.step === "playing" &&
     state.round.guessMode === "letter"
   ) {
-    const result = produce(state, (draft) => {
+    const result = nextRound(state, (draft) => {
       const letter = action.letter.toUpperCase();
 
       if (state.round.lettersGuessed[letter]) {
@@ -418,10 +436,6 @@ export function reducer(state: State, action: Action): State {
       const hasLetter = draft.round.word.includes(letter);
 
       if (hasLetter) {
-        // const occurences = draft.round.word
-        //   .split("")
-        //   .filter((l) => l === letter).length;
-
         draft.round.points[draft.round.turn] += 1;
 
         if (remainingLetters === 0) {
@@ -647,7 +661,7 @@ export function reducer(state: State, action: Action): State {
   }
 
   if (action.type === "skip" && state.step === "playing") {
-    const next = produce(state, (draft) => {
+    const next = nextRound(state, (draft) => {
       playSound("skip");
       setNextPlayer(draft);
     });
@@ -829,4 +843,19 @@ export function getGuessWordPoints(state: {
   });
 
   return remaining > state.round.word.length / 2 ? remaining * 2 : remaining;
+}
+
+function roundId() {
+  return crypto.randomUUID();
+}
+
+function nextRound(
+  state: PlayingState,
+  cb: (draft: Draft<PlayingState>) => void
+): PlayingState {
+  return produce(state, (draft) => {
+    draft.round.id = roundId();
+    draft.round.timer = state.game.time;
+    return cb(draft);
+  });
 }
